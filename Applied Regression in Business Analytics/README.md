@@ -1,20 +1,19 @@
-# Applied Regression in Business Analytics - ISA 281
+# Applied Regression in Business Analytics - ISA 291
 > Spring Semester 2020-2021
 
 ## Course Description:
-The course focuses on structuring, designing and developing data driven business applications. Emphasis is on the use of structured, object-oriented techniques, and using application libraries for data retrieval, logic development, and information presentation.
+Multiple regression as related to analysis of business problems. Includes useful regression models, statistical inference (intervals and hypothesis tests) in regression, model building, regression assumptions, remedies for violations of assumptions, applications in experimental design, and time series analysis.
 
 ## List of Languages Used:
-- Python
+- RStudio
 
 ## List of Topics Covered:
-- Names and Functions
-- Format strings
-- Conditional (if/else/else if) statements
-- For and While Looping
-- Lists
-- Tuples
-- Dictionaries
-- Handling Errors (Exceptions)
-- Working with CSV files (reading, iterating, and priting to files)
-- Standard Python Libraries
+- Introduction to R
+- Regression Basics
+- Inference on Slope
+- Correlation & R-Sqaare Value
+- Confidence and Prediction Intervals
+- Multiple Linear Regression
+- Advanced Multiple Linear Regression
+- Model Building
+- Variable Screening (Backward, Forward, Stepwise)
