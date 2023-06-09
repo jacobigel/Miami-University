@@ -1,4 +1,5 @@
 # Applied Regression in Business Analytics - ISA 281
+> Spring Semester 2020-2021
 
 ## Course Description:
 The course focuses on structuring, designing and developing data driven business applications. Emphasis is on the use of structured, object-oriented techniques, and using application libraries for data retrieval, logic development, and information presentation.
