@@ -1,4 +1,5 @@
 # Business Intelligence and Data Visualization - ISA 401
+> Spring Semester 2021-2022
 
 ## Course Description:
 An introduction to the use of business intelligence and data visualization in organizations, with emphasis on how information is gathered, stored, analyzed, and used. Topics covered include business intelligence, data warehousing, data visualization, and data mining.
