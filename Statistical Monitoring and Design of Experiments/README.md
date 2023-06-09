@@ -1,13 +1,9 @@
-# Statistical Monitoring and Design of Experiments
-
+# Statistical Monitoring and Design of Experiments - ISA 365
+> Spring Semester 2022-2023
 
 
 ## Course Description:
-Miami University ISA 365
-
 Introduction to statistical methods for monitoring process data and data streams. Introduction to experimental design with applications in business analytics.
-
-
 
 ## List of Languages Used:
 - RStudio
