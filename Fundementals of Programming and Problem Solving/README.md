@@ -1,4 +1,4 @@
-# Data Mining in Business - CSE 174
+# Fundementals of Programming and Problem Solving - CSE 174
 > Fall Semester 2021-2022
 
 ## Course Description:
