@@ -12,7 +12,6 @@ _This is not an extensive list of all classes due to certain sharing restriction
 - [Business Programming (ISA 281)](https://github.com/jacobigel/Miami-University/tree/main/Business%20Programming)
 - [Applied Regresssion in Business Analytics (ISA 291)](https://github.com/jacobigel/Miami-University/tree/main/Applied%20Regression%20in%20Business%20Analytics)
 - [Database Systems and Data Warehousing (ISA 245)](https://github.com/jacobigel/Miami-University/tree/main/Database%20Systems%20and%20Data%20Warehousing)
-- [Quantitative Analysis of Business Problems (ISA 321)](https://github.com/jacobigel/Miami-University/tree/main/Quantitative%20Analysis%20of%20Business%20Problems)
 - [Statistical Monitoring and Design of Experiments (ISA 365)](https://github.com/jacobigel/Miami-University/tree/main/Statistical%20Monitoring%20and%20Design%20of%20Experiments)
 - [BI & Data Visualization (ISA 401)](https://github.com/jacobigel/Miami-University/tree/main/BI%20%26%20Data%20Visualization)
 - [Managing Big Data (ISA 414)](https://github.com/jacobigel/Miami-University/tree/main/Managing%20Big%20Data)
