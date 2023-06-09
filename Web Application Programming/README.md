@@ -22,6 +22,6 @@ An introduction to programming concepts and practices for creating applications 
 - User Registration / Login
 - Document Object Model
 - Web Services/Representational State Transfer (REST)
-- DEployment
+- Deployment
 - Web Security
 - Accessibility
