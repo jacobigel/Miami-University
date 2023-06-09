@@ -29,6 +29,7 @@ _This is not an extensive list of all classes due to certain sharing restriction
 - SQLDeveloper
 - Microsoft Excel
 - PowerBI
+- Tableau
 
 ## Computer Science Related Courses:
 - [Computer Science and Software Engineering (CSE 102)](https://github.com/jacobigel/Miami-University/tree/main/Computer%20Science%20and%20Software%20Engineering)
