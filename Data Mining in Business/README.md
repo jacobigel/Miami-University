@@ -1,4 +1,5 @@
 # Data Mining in Business - ISA 491
+> Fall Semester 2021-2022
 
 ## Course Description:
 Analysis of large data sets related to business is the focus. Topics such as cluster analysis, market basket analysis, tree diagrams, logistic regression, neural nets, model evaluation and application will be presented and implemented using current data mining software.
