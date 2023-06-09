@@ -25,4 +25,3 @@ An introduction to programming concepts and practices for creating applications 
 - DEployment
 - Web Security
 - Accessibility
-- 
