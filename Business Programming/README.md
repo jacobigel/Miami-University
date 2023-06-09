@@ -1,4 +1,4 @@
-# Applied Regression in Business Analytics - ISA 281
+# Business Programming - ISA 281
 > Spring Semester 2020-2021
 
 ## Course Description:
