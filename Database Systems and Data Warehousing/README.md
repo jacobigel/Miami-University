@@ -9,7 +9,8 @@ Provides an understanding of the importance of database systems in organizations
 ## List of Languages Used:
 - SQL
 - UML
-- 
+
+
 ## List of Topics Covered:
 - Database Systems
 - Data Models
