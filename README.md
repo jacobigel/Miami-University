@@ -1,7 +1,7 @@
 # Miami University Master Repository
-> Fall 2018 - Spring 2023
-> Major: Information Systems and Analytics
-> Minor: Computer Science
+> Major: Information Systems and Analytics<br />
+> Minor: Computer Science<br />
+> Fall 2018 - Spring 2023<br />
 
 ## Repository Description:
 
