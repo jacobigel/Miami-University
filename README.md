@@ -18,7 +18,7 @@ _This is not an extensive list of all classes due to certain sharing restriction
 - [Managing Big Data (ISA 414)](https://github.com/jacobigel/Miami-University/tree/main/Managing%20Big%20Data)
 - [Data Mining In Business (ISA 491)](https://github.com/jacobigel/Miami-University/tree/main/Data%20Mining%20in%20Business)
 
-### Langagues Used:
+### Languages Used:
 - Python
 - SQL
 - R
@@ -39,7 +39,7 @@ _This is not an extensive list of all classes due to certain sharing restriction
 - [Object Oriented Programming (CSE 271)](https://github.com/jacobigel/Miami-University/tree/main/Object%20Oriented%20Programming)
 - [Data Abstractions and Structures (CSE 274)](https://github.com/jacobigel/Miami-University/tree/main/Data%20Abstractions%20and%20Structures)
 
-### Langagues Used:
+### Languages Used:
 - Java
 - Javascript
 - HTML/CSS
