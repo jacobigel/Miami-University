@@ -1,4 +1,5 @@
 # Managing Big Data - ISA 414
+> Fall Semester 2022-2023
 
 ## Course Description:
 This course provides an introduction to the storage, retrieval and analysis of unstructured and big data. Topics include web analytics, text processing, text analytics such as sentiment analysis, and trend detection in unstructured data. The course will cover and use frameworks that use distributed computing, cloud-based systems for analyzing business information data that contain both structured and unstructured data. Managing big data in organizations, and visualizing big data is introduced.
