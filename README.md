@@ -1,8 +1,11 @@
 # Miami University Master Repository
+> Fall 2018 - Spring 2023
+> Major: Information Systems and Analytics
+> Minor: Computer Science
 
 ## Repository Description:
 
-This repository is dedicated to the courses that I took throughout my time at Miami University through the Farmer School of Business. I majored in Information Systems and Analytics in addition to my minor of Computer Science. <br /><br />
+This repository is dedicated to the courses that I took throughout my time at Miami University through the Farmer School of Business.<br /><br />
 
 _This is not an extensive list of all classes due to certain sharing restrictions/formatting issues between GitHub and the original files._
 
