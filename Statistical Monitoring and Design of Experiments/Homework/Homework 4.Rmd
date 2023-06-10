@@ -1,0 +1,200 @@
+---
+title: "Homework 4 - Jacob Igel"
+date:  "Last complied on `r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+Candy Crush is experimenting with three different versions of in-game boosters: the lollipop hammer, the jellyfish, and the color bomb. Users are randomized to one of these three conditions and they receive (for free) 5 boosters corresponding to their condition. Interest lies in evaluating the effect of these different boosters on the length of time a user plays the game.
+
+1. What is the treatment in the experiment? How many levels does it have?
+* Treatment: Which booster they are going to randomly receive (lollipop hammer, jellyfish, or color bomb)
+* Levels: 3
+
+2. What is the response in this experiment?  What type of variable is it?
+* Response: Length of time that the user plays the game after the booster
+* Type of variable: Time
+
+3. Read in the data file "candycrush.csv". Is this data wide or long?  Describe to me why you answered what you did.
+
+```{r}
+
+df <- read.csv("/Users/jacobigel/Desktop/School/ISA365-A/Datasets/candycrush.csv", stringsAsFactors = TRUE)
+
+head(df)
+```
+
+* This data is wide since wide data formats contain values that do not repeat in the first column. Long data contains values that do repeat in the first column. If it was long data, lollipop, jellyfish, and color bomb would repeat in the first column.
+
+4. Make the data long.  Use the `pivot_longer()` function from `tidyverse`.
+
+```{r}
+library(tidyverse)
+df_long<-df %>% pivot_longer(everything(),
+                             names_to="version",
+                             values_to="time")
+
+head(df_long)
+
+```
+
+5. Produce a summary of the average and standard deviation of playing time for each treatment. Use `tidyverse`.
+
+```{r}
+library(tidyverse)
+
+df_long %>% group_by(version) %>% summarise(mean(time), sd(time), n())
+
+```
+
+6. Test to see if the treatments produce a difference in the mean playing time. State your conclusion in terms of the problem.
+
+```{r}
+mod<-aov(time~version, data=df_long)
+summary(mod)
+```
+* From this output, we can see that one of the boosters is producing a different mean time (p-value:0.00255).
+
+
+7. Check the necessary assumptions for the test you completed in number 6.  Show the results and comment on each below.
+* 1. Residuals should be normally distributed
+* 2. The variance for each treatment should be constant
+* 3. The residuals should be independent of the treatments
+
+```{r}
+qqnorm(mod$residuals)
+qqline(mod$residuals)
+```
+
+* Residuals should be normally distributed - The QQ plot shows that almost all of the residuals lay on the qqline. We can see that there are some outliers but that is expected. 
+
+```{r}
+reg <- lm(time~version, data=df_long)
+head(reg$fitted.values)
+```
+* The variance for each treatment should be constant - These align with the mean values we found in the table above in question 5.
+
+```{r}
+df_long$residuals<-mod$residuals
+boxplot(df_long$residuals~df_long$version)
+```
+* The residuals should be independent of the treatments - This can be assumed but the boxplot shows that the residuals are independent of the treatments. 
+
+
+8. Which treatments are different from each other?  Perform a multiple comparison test to decided and state your conclusion.
+
+```{r}
+TukeyHSD(mod)
+```
+
+* From this output we see that the jellyfish is not different from the color bomb. 
+* Color bomb and jelly fish is larger than the the lollipop hammer. 
+* Color bomb and jelly fish is not different from the lollipop hammer and the color bomb and jelly fish are marginally different.
+
+9. Based on this experiment, what is your recommendation regarding the in-game boosters?
+
+* My recommendation for the in-game boosters is to give the player more Jellyfish and Color bomb boosters. There is only a marginal difference with the amount of time played with those two. The lollipop hammer gives the least amount of time played post-giving that type of booster so give those less.
+
+10. If there were 7 different in-game boosters tested how many comparisons would you need to compare each booster to each other booster?
+
+```{r}
+choose(7, 2)
+
+```
+
+
+11.  Given your answer to number 10 what is the probability that you will make at least one type I error if you make all of these comparisons? Use $\alpha$=0.05.
+
+```{r}
+1 - (0.95^21)
+
+```
+
+
+Suppose that Nike is running an ad campaign for Nike SB, their skateboarding division, and the campaign involves 5 different video ads the are being shown in Facebook news feeds. A video ad is `viewed' if it is watched for longer than 3 seconds, and interest lies in determining which ad is most popular and hence most profitable by comparing the viewing rates of the five different videos. The data is contained "nikeAd.csv".
+
+12. What is the treatment?
+* Treatment: The different videos being put on Facebook news feeds.
+
+13. What is the the response?  What type of response is it?
+* Response: Views of video
+* Type of response: Whether the ad was viewed or not (binary yes or no)
+
+14. Read in the data from "nikeAd.csv" and produce a summary of the proportion of views from each ad.
+
+```{R}
+
+df2 <- read.csv("/Users/jacobigel/Desktop/School/ISA365-A/Datasets/nikeAd.csv", stringsAsFactors = TRUE)
+
+df2$X <- as.factor(df2$X)
+
+head(df2)
+
+```
+
+15. Is there evidence that the ad makes a difference in the number of views?
+
+```{r}
+library(tidyverse)
+df2 %>% group_by(video, views) %>%  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+mod2<-aov(views~video, data=df2)
+summary(mod2)
+
+```
+* Based on these two different outputs, we can tell that there is difference in advertisement videos and the number of views it gets. We can see that video 4 & 5 are the ones with the highest difference.
+
+# CORRECT CODE
+
+```{r}
+table(df2$video, df2$views)
+
+
+chisq.test(table(df2$video, df2$views))
+
+```
+
+
+16. Compare the two videos with the highest proportion of views with the beta-binomial model? Interpret the result.
+
+* Just to show a comparison of the top two
+```{r}
+x<-seq(0,1,0.01)
+# Ad 4
+a=307+1
+b=4700+1
+Afx<-dbeta(x, a, b)
+# Ad 5
+a1=175+1
+b1=4805+1
+Bfx<-dbeta(x, a1, b1)
+plot(x, Afx, type="l") 
+lines(x, Bfx, col="red")
+```
+
+
+* Beta-Binomial Model
+```{r}
+iter=100000
+a=307+1
+b=4700+1
+a1=175+1
+b1=4805+1
+count<-c()
+for (i in 1:iter){
+A<-rbeta(1, a, b)
+B<-rbeta(1, a1, b1)
+count[i]<-ifelse(A>B, 1, 0)
+
+}
+pdiff<-sum(count)/iter
+pdiff
+```
+* From this output, this indicates that there is a 100% chance that the true success rate for A is greater than the true success rate for B. 

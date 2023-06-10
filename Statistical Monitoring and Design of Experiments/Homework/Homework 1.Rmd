@@ -1,0 +1,138 @@
+---
+title: "ISA 365 Homework 1 - Jacob Igel"
+date:  "Last complied on `r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+1. Read in the "Houses.csv" data set.  Show the `head()`.  Use the option `stringsAsFactors = TRUE` in your `read.csv()` statement.
+
+```{R}
+df <-
+  read.csv("/Users/jacobigel/Desktop/School/ISA365-A/Datasets/Houses.csv", stringsAsFactors = TRUE)
+
+head(df)
+
+```
+
+2. Find the mean and standard deviation of the Age variable.
+
+### Mean
+```{r}
+mean(df$Age)
+```
+
+### Standard Deviation
+```{r}
+sd(df$Age)
+```
+
+
+3. Make a histogram of the Age variable.  Comment on the shape of the Age variable. 
+
+```{r}
+hist(df$Age)
+
+min(df$Age)
+max(df$Age)
+```
+- Shape - Mostly uniform, slight right skew
+- Outlier - Appears to have more outliers towards the younger ages.
+- Center - The mean is 32.9, rounding up to 33 years old
+- Spread - between ages 15 and 51
+
+
+4. Calculate a 95% confident interval for the Age variable "by hand". Do not use the `t.test` function here.
+
+```{r}
+mean(df$Age)+qt(.975,29)*sd(df$Age)/sqrt(30)
+mean(df$Age)-qt(.975,29)*sd(df$Age)/sqrt(30)
+```
+
+
+
+5. Use the `t.test()` function to verify your calculations of the confidence interval were correct. You do not have to specify a value to test against, R will use 0 as the default.
+
+```{r}
+
+t.test(df$Age, conf.level = .95)
+
+```
+
+6. Find the number of houses that have fireplaces.
+
+```{r}
+
+summary(df$Fireplace)
+
+```
+- 18 houses have fireplaces.
+
+7. Construct a 95% confidence interval for the proportion of houses that have fireplaces. Remember you have to the proportion=number of houses Yes/total houses. Do this calculation "by hand".
+
+```{r}
+prop.table(table(df$Fireplace))
+18/30
+
+```
+
+```{r}
+0.6+qnorm(.975)*sqrt(0.6*(1-0.6)/30)
+0.6-qnorm(.975)*sqrt(0.6*(1-0.6)/30)
+```
+
+
+8. Calculate the confidence interval calculation with `prop.test()`. You have to use the statement `correct=FALSE` like this `prop.test(x,n, correct=FALSE)`.  Where x=count of fireplaces and n=number of observations. The results will be close, but not match exactly the results from above.
+
+```{r}
+
+prop.test(x = 18, n = 30, correct = FALSE)
+
+```
+
+9. What is necessary to show causation?
+
+There are three criteria to show causation (in terms of X and Y):
+
+- When X changes, Y changes - subsequently if X changes and Y does not, we cannot assert that X causes Y.
+
+- If X happened before or after Y, we cannot assert that that X causes Y since it happened in a different time frame.
+
+- Nothing besides X changed systematically -  if we have variables W and Z that change at the exact same time that X changes, we cannot rule out the possibility that those variables are the cause for the change in Y.
+
+10. Go to Miami University main landing page https://miamioh.edu/. Write down two or more tests you would like to make, for example I would like to see the slogan "Miami made. Forever prepared." changed out with a different one (you can't use this example).   
+
+- Replacing the top five links (tribal sovereignty, visit Miami, climate survey, etc.) with photos of students learning or laughing with one another (like shown below in the 'Power of Will' part of Miamis' page).
+- Replacing the art in the background with actual photos of Miamis' campus.
+- Putting the social media links in the top header instead of the footer of the page.
+
+11. Find an example of an observational study. You can paste the link to the story in this document like this: [link](https://miamioh.edu/).
+
+This is a study of onsite observational studies with older people. I will be using the first example that they talk about 'Example 1: Familiarity and intuitive use'
+
+- [Study used](https://www.noldus.com/blog/two-examples-observational-studies)
+
+12. Referring to the observational study, what makes this observational rather than an experiment?
+
+- It was an observational study since the groups that are being tested (older vs younger adults) are just being observed on their familiarity with new electronic/technological products that come out.
+
+13. Referring to your observational study, what is the purpose of the study?
+
+- The purpose of this study was to find was that the older age group can have an improved technological experience when it comes to new products that come out. This can increase their social inclusion, productivity, and general independence. 
+
+14. Referring to your observational study, what is the primary variable of interest?
+
+- The primary variable of interest was seeing how older people interact with modern devices since it is "generally assumed that older adults have difficulty using modern electronic devices". Since this age group is ever increasing, changing products and processes to adapt to their needs is also important. 
+
+
+15. Find an example of a business experiment reported in the popular business literature e.g. Forbes or The Wall Street Journal. This is a bonus question.  You will get points as long as groups of people do not turn in the same article (in other words, don't share articles). Provide the link to the article below.  
+
+- "Amazon’s Jeff Bezos explains the power of experimentation on the basis of a truncated outcome distribution. If you fail while experimenting, there is a capped downside. However, unlike baseball, where the most runs a player can get when they step up to the plate is four, he explains that an experiment can have 1000 returns in business."
+- [Forbes link](https://www.forbes.com/sites/forbescommunicationscouncil/2017/09/06/why-and-how-to-experiment-the-right-way/?sh=5530e6426308)
+- [Amazon link](https://www.sec.gov/Archives/edgar/data/1018724/000119312516530910/d168744dex991.htm)

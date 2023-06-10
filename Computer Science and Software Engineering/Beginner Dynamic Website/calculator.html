@@ -1,0 +1,71 @@
+<!--Jacob Igel, Section B, 11/13/19-->
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Calculator</title>
+	<link rel="stylesheet" type="text/css" href="styleme2.css">
+</head>
+
+
+<body id="body">
+	<h1>Jacob Igel</h1>
+<div style="text-align: center;">
+	<button onclick="location.href= 'index.html';"><b>Home</b></button>
+	<button onclick="location.href= 'classes.html';"><b>Classes</b></button>
+	<button onclick="location.href= 'my_favorite.html';"><b>My Favorite</b></button>
+	<button onclick="location.href= 'my_mood.html';"><b>My Mood</b></button>
+	<button onclick="location.href= 'my_neighbors.html';"><b>My Neighbors</b></button>
+	<button onclick="location.href= 'programs.html';"><b>My Programs</b></button>
+</div>
+<hr>
+
+<h2>Calculator</h2>
+<script type="text/javascript">
+	do
+	{
+		selection=parseInt(prompt("Please make a selection: \n 1- Addition\n 2- Subtraction\n 3- Multiplication\n 4- Division \n 5- Exit \n Please enter your choice"));
+		if (selection ==1)
+		{
+			v1=parseInt(prompt("Enter the First value"));
+			v2=parseInt(prompt("Enter the Second value"));
+			alert(v1+"+"+v2+"="+(v1+v2));
+		}
+			if (selection ==2)
+		{
+			v1=parseInt(prompt("Enter the First value"));
+			v2=parseInt(prompt("Enter the Second value"));
+			alert(v1+"-"+v2+"="+(v1-v2));
+		}
+			if (selection ==3)
+		{
+			v1=parseInt(prompt("Enter the First value"));
+			v2=parseInt(prompt("Enter the Second value"));
+			alert(v1+"*"+v2+"="+(v1*v2));
+		}
+			if (selection ==4)
+		{
+			v1=parseInt(prompt("Enter the First value"));
+			v2=parseInt(prompt("Enter the Second value"));
+			alert(v1+"/"+v2+"="+(v1/v2));
+		}
+	} while (selection!=5)
+
+	alert("Thank you for using our website, Have a Nice Day");
+	
+
+
+</script>
+
+
+
+<hr>
+
+
+<div style="text-align: center;">
+	<button onclick="document.getElementById('body').style.backgroundColor ='Dodgerblue';"> <b>Change Background Color</b></button>
+</div>
+
+
+</body>
+</html>

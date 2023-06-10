@@ -1,0 +1,297 @@
+---
+title: "Lab 1: Scraping Web Pages"
+author:
+  - name: "Luke Romanik ^[Email: romanile@miamioh.edu]"
+    affiliation: Farmer School of Business, Miami University
+  - name: "Jacob Igel ^[Email: igeljj@miamioh.edu]"
+    affiliation: Farmer School of Business, Miami University
+  - name: "Jon Abaya ^[Email: abayajb@miamioh.edu]"
+    affiliation: Farmer School of Business, Miami University
+date: "Spring 2022"
+output: 
+  html_document:
+    code_folding: show
+    code_download: TRUE
+    number_sections: TRUE
+    paged_df: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      progress = FALSE,
+                      verbose = TRUE,
+                      cache = TRUE)
+```
+
+
+---
+
+# Required Packages
+```{r packages}
+# checking to see if the pacman package is installed + installing it if needed
+if(require(pacman)==FALSE) install.packages("pacman")
+pacman::p_load(rvest, tidyverse, magrittr, knitr, kableExtra)
+```
+
+
+---
+
+# Scraping the Miami University Found and Impounded Property Listing
+
+When you click on [Found and Impounded Property Listing](https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3uk9AJOMODxS9fUgX_4vnEMj-Di7ulkTXWzPUmaHvHbaII63xmKmRu3VaBvOXrwQhtkOUlL9fxLMB/pubhtml?gid=1104208671&single=true) on the [Property - Lost, Found, Impounded Page](https://www.miamioh.edu/police/services/propertylostfoundimpounded/index.html), you will be taken to a Google Doc containing a table of lost and found items. 
+
+**Please scrape the table and print it out.** Your code should be self-contained in the code chunk below.
+
+```{r mu_lost_and_found}
+mu_lost_found = read_html("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3uk9AJOMODxS9fUgX_4vnEMj-Di7ulkTXWzPUmaHvHbaII63xmKmRu3VaBvOXrwQhtkOUlL9fxLMB/pubhtml?gid=1104208671&single=true")
+
+mu_lost_found = mu_lost_found %>% 
+  html_element("table") %>%
+  html_table(header = TRUE)
+mu_lost_found = mu_lost_found[-c(0,2), -c(1)]
+names(mu_lost_found) <- as.character(mu_lost_found[1,])
+mu_lost_found <- mu_lost_found[-1,]
+kable(mu_lost_found, caption = "MU Lost and Found") %>% kable_styling(fixed_thead = TRUE,bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+
+---
+
+# Create a Table of all FSB Departmental Faculty/Staff
+
+Currently, the Farmer School of Business has the following academic departments:
+- [Accountancy](https://www.miamioh.edu/fsb/academics/accountancy/about/faculty-staff/index.html)  
+- [Economics](https://www.miamioh.edu/fsb/academics/economics/about/faculty-staff/index.html) 
+- [Entrepreneurship](https://www.miamioh.edu/fsb/academics/entrepreneurship/about/faculty-staff/index.html)  
+- [Finance](https://www.miamioh.edu/fsb/academics/finance/about/faculty-staff/index.html)
+- [Information Systems & Analytics](https://www.miamioh.edu/fsb/academics/isa/about/faculty-staff/index.html)  
+- [Marketing](https://www.miamioh.edu/fsb/academics/marketing/about/faculty-staff/index.html)  
+- [Management](https://www.miamioh.edu/fsb/academics/management/about/faculty-staff/index.html)  
+
+Using the code chunk below, please write code that will produce and print a **single tibble containing information on ALL departments and the following variables:** (a) department name, (b) faculty/staff's name, (c) faculty/staff's position, and (d) faculty/staff's website
+
+```{r fsb_faculty_staff}
+vector_of_urls = list("https://www.miamioh.edu/fsb/academics/accountancy/about/faculty-staff/index.html",
+                      "https://www.miamioh.edu/fsb/academics/economics/about/faculty-staff/index.html",
+                      "https://www.miamioh.edu/fsb/academics/entrepreneurship/about/faculty-staff/index.html",
+                      "https://www.miamioh.edu/fsb/academics/finance/about/faculty-staff/index.html",
+                      "https://www.miamioh.edu/fsb/academics/isa/about/faculty-staff/index.html",
+                      "https://www.miamioh.edu/fsb/academics/marketing/about/faculty-staff/index.html",
+                      "https://www.miamioh.edu/fsb/academics/management/about/faculty-staff/index.html")
+
+scrape_fsb_faculty = function(url){
+  fac_url = read_html(url)
+  temp <- set_names(data.frame(cbind(
+    html_text2(html_nodes(fac_url, 'tr > td'))[seq(from = 1, to = length( html_text2(html_nodes(fac_url, 'tr > td'))), by = 3)],
+    html_text2(html_nodes(fac_url, 'tr> td> strong > a')),
+    html_text2(html_nodes(fac_url, 'tr > td > i')) %>% 
+      str_replace_all(.,"\\n", " ") %>% 
+      str_trim(., side = c("both")),
+    html_nodes(fac_url,'a') %>% 
+      html_attr('href') %>% 
+      str_subset(., "http://miamioh.edu/fsb/directory")
+  )), c('Department Name', 'Faculty Name', 'Faculty Position', 'Faculty Website'))
+  return(temp)
+}
+
+all_fsb_faculty = map_df(.x = vector_of_urls, .f = scrape_fsb_faculty)
+all_fsb_faculty = as_tibble(all_fsb_faculty)
+kable(all_fsb_faculty, caption = "FSB faculty") %>% kable_styling(fixed_thead = TRUE, bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+
+---
+
+# Netflix Ratings on IMDb
+
+The most popular listings on Netflix are rated and reviews on [ImDb](https://www.imdb.com/search/title/?companies=co0144901). Based on this webpage and its following pages, please create a **tibble** that contains the following:
+
+- *Title:*  
+- *Years:*
+- *Age classification:*
+- *Duration:*
+- *Genres:*
+- *IMDb Rating:*
+- *1-2 Sentence Summary:*
+- *Stars:*
+- *Votes:*
+
+**Your tibble should contain a variable for the 9 items above for each of the 50 titles found on the page.** 
+
+```{r netflix_imdb_p1}
+
+scrape_test_imbd <- function(url){
+  yo = tibble()
+  temp = read_html(url)
+  sections <- html_nodes(temp, '#main > div > div.lister.list.detail.sub-list > div > div > div.lister-item-content')
+  for (s in sections) {
+    title = html_text2(html_nodes(s, 'h3 > a'))
+    year = html_text2(html_nodes(s, 'h3 > span.lister-item-year.text-muted.unbold')) %>% 
+      gsub('[A-Za-z()" "]*','', .)
+    if(year == ""){
+      year = 'NULL'
+    }
+    else if((substr(year,(nchar(year)+1)-1,nchar(year))) == "–"){
+      year = paste(year, "present", sep = "")
+    }
+    genre = html_text2(html_nodes(s, 'p > span.genre'))
+    paras <- length(html_nodes(s, 'p'))
+    info_spans <- length(html_nodes(s, 'p:nth-child(2) > span'))
+    if(paras == 3 & info_spans != 5){
+      if(title == "The Adam Project"){
+        age_class = 'NULL'
+        duration = html_text2(html_nodes(s, 'p > span.runtime'))
+        rating = 'NULL'
+        summary = html_text2(html_nodes(s, 'p:nth-child(3)'))
+        stars = html_text2(html_nodes(s, 'p:nth-child(4)'))
+        votes = 'NULL'
+      } else if(title == "That '90s Show"){
+          age_class = html_text2(html_nodes(s, 'p > span.certificate'))
+          duration = html_text2(html_nodes(s, 'p > span.runtime'))
+          rating = 'NULL'
+          summary = html_text2(html_nodes(s, 'p:nth-child(3)'))
+          stars = html_text2(html_nodes(s, 'p:nth-child(4)'))
+          votes = 'NULL'
+      } else if(info_spans == 2){
+        age_class = 'NULL'
+        duration = 'NULL'
+        rating = 'NULL'
+        summary = html_text2(html_nodes(s, 'p:nth-child(3)'))
+        stars = html_text2(html_nodes(s, 'p:nth-child(4)'))
+        votes = 'NULL'
+      } else if(info_spans == 4){
+        age_class = html_text2(html_nodes(s, 'p > span.certificate'))
+        duration = 'NULL'
+        rating = 'NULL'
+        summary = html_text2(html_nodes(s, 'p:nth-child(3)'))
+        stars = html_text2(html_nodes(s, 'p:nth-child(4)'))
+        votes = 'NULL'
+      } else if(info_spans == 6){
+        age_class = html_text2(html_nodes(s, 'p > span.certificate'))
+        duration = html_text2(html_nodes(s, 'p > span.runtime'))
+        rating = 'NULL'
+        summary = html_text2(html_nodes(s, 'p:nth-child(3)'))
+        stars = html_text2(html_nodes(s, 'p:nth-child(4)'))
+        votes = 'NULL'
+      }else{
+        age_class = 'NULL'
+        duration = 'NULL'
+        rating = 'NULL'
+        summary = 'NULL'
+        stars = 'NULL'
+        votes = 'NULL'
+      }
+      
+    }else if(paras == 4 & info_spans != 5){
+      if(title == "Bulgasal" | title == "Our Beloved Summer"){
+        age_class = 'NULL'
+        duration = html_text2(html_nodes(s, 'p > span.runtime'))
+        rating = html_text2(html_nodes(s, 'div > div.inline-block.ratings-imdb-rating > strong'))
+        summary = html_text2(html_nodes(s, 'p:nth-child(4)'))
+        stars = html_text2(html_nodes(s, 'p:nth-child(5)'))
+        votes = html_text2(html_nodes(s, 'p.sort-num_votes-visible > span:nth-child(2)'))
+      } else if(title == "Toy Boy"){
+          age_class = html_text2(html_nodes(s, 'p > span.certificate'))
+          duration = 'NULL'
+          rating = html_text2(html_nodes(s, 'div > div.inline-block.ratings-imdb-rating > strong'))
+          summary = html_text2(html_nodes(s, 'p:nth-child(4)'))
+          stars = html_text2(html_nodes(s, 'p:nth-child(5)'))
+          votes = html_text2(html_nodes(s, 'p.sort-num_votes-visible > span:nth-child(2)'))
+      }
+      else if(info_spans == 6){
+          age_class = html_text2(html_nodes(s, 'p > span.certificate'))
+          duration = html_text2(html_nodes(s, 'p > span.runtime'))
+          rating = html_text2(html_nodes(s, 'div > div.inline-block.ratings-imdb-rating > strong'))
+          summary = html_text2(html_nodes(s, 'p:nth-child(4)'))
+          stars = html_text2(html_nodes(s, 'p:nth-child(5)'))
+          votes = html_text2(html_nodes(s, 'p.sort-num_votes-visible > span:nth-child(2)'))
+      } else if(info_spans == 3){
+          age_class = html_text2(html_nodes(s, 'p > span.certificate'))
+          duration = 'NULL'
+          rating = html_text2(html_nodes(s, 'div > div.inline-block.ratings-imdb-rating > strong'))
+          summary = html_text2(html_nodes(s, 'p:nth-child(4)'))
+          stars = html_text2(html_nodes(s, 'p:nth-child(5)'))
+          votes = html_text2(html_nodes(s, 'p.sort-num_votes-visible > span:nth-child(2)'))
+      }else{
+        age_class = 'NULL'
+        duration = 'NULL'
+        rating = 'NULL'
+        summary = 'NULL'
+        stars = 'NULL'
+        votes = 'NULL'
+      }
+    }
+    else{
+      age_class = html_text2(html_nodes(s, 'p > span.certificate'))
+      duration = html_text2(html_nodes(s, 'p > span.runtime'))
+      rating = html_text2(html_nodes(s, 'div > div.inline-block.ratings-imdb-rating > strong'))
+      summary = html_text2(html_nodes(s, 'p:nth-child(4)'))
+      stars = html_text2(html_nodes(s, 'p:nth-child(5)'))
+      votes = html_text2(html_nodes(s, 'p.sort-num_votes-visible > span:nth-child(2)'))
+    }
+    yo = rbind(yo, data.frame(title, year, age_class, duration, genre, rating, summary, stars, votes))
+  }
+  return(yo)
+}
+netflix_top_50 = scrape_test_imbd("https://www.imdb.com/search/title/?companies=co0144901")
+kable(netflix_top_50, caption = "Netflix Top 50") %>% kable_styling(fixed_thead = TRUE, bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+---
+
+# Top 300 Netflix Ratings 
+
+Expand on the previous example to capture the top **300** titles on Netflix (i.e., the information across six pages).
+
+```{r netflix_imdb_p2}
+test_scrape_300 = tibble()
+base_url = 'https://www.imdb.com/search/title/?companies=co0144901'
+start = 0
+count = 1
+while (start <= 251) {
+  intrest_url = paste0(base_url,"&start=",start,"&ref_=adv_nxt")
+  test_scrape_300 = rbind(test_scrape_300, scrape_test_imbd(intrest_url))
+  start = (start + 50) + count
+  count = 0
+}
+kable(test_scrape_300, caption = "Netflix Top 300") %>% kable_styling(fixed_thead = TRUE, bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+
+---
+
+# Yelp Reviews for Patterson Cafe
+In assignment 02, I shared with you an RDS file containing four variables and all the reviews that were performed on [Patterson Cafe on Yelp](https://www.yelp.com/biz/pattersons-cafe-oxford). Use what you have learned in class to potentially recreate the same results.
+
+```{r yelp_reviews}
+base_url = 'https://www.yelp.com/biz/pattersons-cafe-oxford'
+start = 0
+yelp_reviews = tibble()
+
+scrape_yelp <- function(url){
+  temp = read_html(url)
+  df <- set_names(data.frame(cbind(
+    html_text2(html_nodes(temp, 'div.user-passport-info.border-color--default__09f24__NPAKY > span > a')),
+    html_text2(html_nodes(temp, 'div > ul > li> div > div.margin-t1__09f24__w96jn.margin-b1-5__09f24__NHcQi.border-color--default__09f24__NPAKY > div > div.arrange-unit__09f24__rqHTg.arrange-unit-fill__09f24__CUubG.border-color--default__09f24__NPAKY > span.css-1e4fdj9')),
+    html_nodes(temp, 'div.css-79elbk.border-color--default__09f24__NPAKY > div > ul > li > div > div.margin-t1__09f24__w96jn.margin-b1-5__09f24__NHcQi.border-color--default__09f24__NPAKY > div > div:nth-child(1) > span > div') %>% 
+      html_attr("aria-label") %>% 
+      substr(., 1, 1),
+    html_text2(html_nodes(temp, 'div > div.margin-b2__09f24__CEMjT.border-color--default__09f24__NPAKY > p > span'))
+  )), c('reviewer', 'review_date', 'score', 'comment'))
+  return(df)
+}
+
+while (start <= 90) {
+  intrest_url = paste0(base_url, "?start=", start)
+  yelp_reviews = rbind(yelp_reviews, scrape_yelp(intrest_url))
+  start = start + 10
+}
+
+kable(yelp_reviews, caption = "Patterson Cafe Reviews") %>% kable_styling(fixed_thead = TRUE, bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+

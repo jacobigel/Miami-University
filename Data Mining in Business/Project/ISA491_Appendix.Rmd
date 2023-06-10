@@ -1,0 +1,863 @@
+---
+title: "ISA 491 Apenndix - Jacob Igel & Elliott Kelley"
+
+date:  "`r format(Sys.time(), '%B %d, %Y')`"
+
+output: 
+  html_document:
+    
+    toc: true
+    toc_float: true
+    theme: paper
+    code_folding: hide
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+
+The data that we have is Miami University Admissions Data from 2009 - 2017. Through cleaning the data and eventually using models, we want to predict the probability of students leaving the university to incoming all freshman (probability of not being retained). In the end, we want to find the most important variables for Admissions to look for in a student to put more attention towards retaining them. 
+
+
+### Reading in Data
+```{r}
+pacman::p_load(tidyverse, doParallel, nnet, caret, ranger, ROCR, gbm, xgboost, pROC, fastDummies, NeuralNetTools)
+
+domestic <- readRDS("ISA491Project_clean2.RDS")
+rforest <- readRDS("rforest_final.RDS")
+gb.tree <- readRDS("gbtree_final.RDS")
+r.gbtree.auc.t <-readRDS("pgb_training.RDS")
+r.gbtree.auc <- readRDS("pgb_valid.RDS")
+
+xgboost <- readRDS("xgboost_final.rds")
+r.xgboost.auc.t <- readRDS("pxgb_training.RDS")
+r.xgboost.auc <- readRDS("pxgb_valid.RDS")
+
+lrstep<-readRDS("lrstep1.RDS")
+step2 <-readRDS("f.RDS")
+nnetFit<-readRDS("nnet_final.RDS")
+
+training<-readRDS("training_final.RDS")
+valid<-readRDS("valid_final.RDS")
+trainIndex<-readRDS("trainIndex_final.RDS")
+
+x <-readRDS("x_final.RDS")
+y <-readRDS("y_final.RDS")
+
+p.xgboost <- readRDS("p.xgboost_final.RDS")
+p.gbtree <- readRDS("p.gbtree_final.RDS")
+
+```
+
+
+### Data Pre-Processing {.tabset}
+  
+#### Subset Data
+
+2005, 2006, 2009, 2010 were all years that Miami admission was not "normal" so because of that we want to consolidate the data to the "Normal" years of operation. 
+
+We are using DateFrom to remove these dates instead of DataFrom since it ranges from 2005 - 2017 instead of 2006 - 2015. They are the exact same variable.
+
+With these variables removed, we now have 9 "Normal" years that we want to compare to 2018 since it is the most recent information that we have. Along those lines, we want to use 2018 as a sort of "base-line" for which variables we find important or not
+
+```{r, eval=FALSE}
+
+domestic <- filter(domestic, (DateFrom != "2005"))
+domestic <- filter(domestic, (DateFrom != "2006"))
+domestic <- filter(domestic, (DateFrom != "2009"))
+domestic <- filter(domestic, (DateFrom != "2010"))
+
+```
+
+
+#### Dummy Variables
+
+To make sure that are cleaning this data properly, every variable that has two levels or above needs to be put into a dummy variable so that is what we are doing here.
+
+```{r, eval=FALSE}
+
+domestic <-dummy_columns(domestic, select_columns = c("AlumniConnection","Division"
+                                                      ,"Major", "Status", "StateResidency",
+                                                      "ApplicationType", "SpecialConsideration",
+                                                      "Question", "Decision", "DecisionType",
+                                                      "Harrison", "HsType", "ON",
+                                                      "VisaType", "MiamiRanks"), 
+                         remove_first_dummy = TRUE,
+                         remove_selected_columns = TRUE)
+
+domestic <-dummy_columns(domestic, select_columns = c("HomeState",
+                                                      "CountyDesc", "CountyCode", 
+                                                      "HighSchoolState",
+                                                      "SuppMajor1","SuppMajor3", "FullRace",
+                                                      "WhichTestBest", "DEC",
+                                                      "Concentration"), 
+                         remove_first_dummy = TRUE,
+                         remove_selected_columns = TRUE)
+```
+
+#### Remove Variables
+
+Put your code and a short description here.
+
+1) Most of these variables are being dropped due to the large proportion of missing values that they have.
+2) Taking this out since we can just use Miami Ranks.
+3) Taking these out since there is about 70% missing and we feel as if these would be difficult to impute with that amount missing.
+4) The rest of the variables that we took out were ones that were mostly zeros in our bar graphs and the last minute variables that we decided to get rid of.
+```{r, eval=FALSE}
+#1)
+domestic <-select(domestic, -starts_with("TIB"), -starts_with("TOEFL"),
+                  -starts_with("IELTS"), -starts_with("ACTMax"), -starts_with("TCP"),
+                  -"tag",-"VentureScholar", -"RoundedGPA",
+                  -"HS.Code", -"Super.ACT", -"IELL", -"IELR", -"IELW", -"IELS",
+                  -"IELO", -"VisaType", -"InternationalFlag", -"NatlAch", -"NatlHisp",
+                  -"CanCode", -"X__1", -"FAFSA_RECV_Date", -"Which.Test", -"Language",
+                  -"DEC", -"SAT.R.ERW", -"ConfirmDate", -"SAT.R.Math", -"ACTWritingMax",
+                  -"CEEB5", -"AIDY_Code", -"Act25", -"Act75", -"Retained_recode",
+                  -"GPAScale", -"OriginalGPA")
+
+#2)
+domestic <-select(domestic, -"FirstSchool", -"SecondSchool", -"ThirdSchool",
+                  -"FourthSchool", -"FifthSchool", -"SixthSchool", -"SeventhSchool",
+                  -"EighthSchool", -"TenthSchool")
+
+#3)
+domestic <- select(domestic, -starts_with("SAT"))
+
+domestic <-select(domestic, -"AlumniConnection_D",-"AlumniConnection_D - Father, Sibling",-starts_with("Major_"), -"StateResidency_Z",
+                  -"Decision_", -"DecisionType_DN",-"DecisionType_DQ",-"DecisionType_E",
+                  -"DecisionType_HN",-"DecisionType_HQ",-"DecisionType_HY", -"DecisionType_KN",
+                  -"DecisionType_KQ",-"DecisionType_KY",-"DecisionType_N",
+                  -"DecisionType_SN",-"DecisionType_SQ",-"DecisionType_SY", 
+                  -starts_with("AlumniConnection_B"))
+
+#4)
+domestic <-select(domestic, -"MiamiRanks_9", -"MiamiRanks_10", -"MiamiRanks_S",
+                  -"HighSchoolState_AR", -"HighSchoolState_DE",
+                  -"HighSchoolState_OR",-"MiamiRanks_8",
+                  -"MiamiRanks_7", -"MiamiRanks_6", -"MiamiRanks_5", -"ON_8",
+                  -"ON_7", -"ON_6", -"ON_5", -"HsType_Unknown", -"HsType_Private Secular",
+                  -"HsType_Home School", -"HsType_Charter", -"HsType_4", -"DecisionType_S",
+                  -"ApplicationType_OI", -"HsType_Religious",
+                  -"Division_CCA", -"AlumniConnection_M - Mother", 
+                  -"AlumniConnection_F - Father",
+                  -"AlumniConnection_C - Mother, Sibling", -"AlumniConnection_C", 
+                  -"AlumniConnection_A", -"Citizenship2",
+                  -"AlumniConnection_A - Mother, Father, Sibling", -"MiamiRanks_4")
+
+
+domestic <-select(domestic, -"SuppMajor3_AP56", -"SuppMajor3_AS47", -"SuppMajor3_AS86", 
+                  -"SuppMajor3_ASBC", -"SuppMajor3_ASBP" , -"SuppMajor3_ASEV",
+                  -"SuppMajor3_ASIN", 
+                  -"SuppMajor3_ASJN", -"SuppMajor3_ASSW", -"SuppMajor3_ASU1",
+                  -"SuppMajor3_BU01", 
+                  -"SuppMajor3_BUIB", -"SuppMajor3_BUIS", -"SuppMajor3_EA56",
+                  -"SuppMajor3_EAGA", 
+                  -"SuppMajor3_FA03", -"SuppMajor3_FA39")
+
+
+domestic <- select(domestic, -"TermCode")
+domestic <- select(domestic, -"Citizenship")
+
+domestic <- select(domestic, -"Concentration_VO",-"Concentration_SI",-"Concentration_SH",
+                   -"Concentration_SG",-"Concentration_SF",-"Concentration_SE",
+                   -"Concentration_SD",-"Concentration_M2",-"Concentration_HB",
+                   -"Concentration_EL",-"Concentration_89",-"Concentration_84",
+                   -"Concentration_76",-"Concentration_IN")
+
+domestic <- select(domestic, -"WhichTestBest_TIE")
+domestic <- select(domestic, -"Dec")
+
+
+```
+
+
+#### Imputation
+
+For df, df2, and df3, we used a function to see if the variables had above a certain percentage missing. If they did, then we both decided just to get rid of the variable since there was going to be way too much to impute at that point. Then, we used a for loop to then impute the certain variables that we decided had enough missing to impute and we replaced the missing values with the median of the given variable.
+
+```{r, eval=FALSE}
+df <- domestic[colSums(is.na(domestic))/nrow(domestic) > .6109]
+
+domestic <-select(domestic, -"DataFrom", -"EER", -starts_with("ApplicationDate"), 
+                  -"DecisionDate", -"ACTChoice", -"Phone", -"Math",
+                  -"DisciplinaryQuestion1", -"NationDesc", -"Housing", -"ACTEquivalent",
+                  -"Lang", -"County", -"InitialContact", -"hs.code", -"HSClust",
+                  -"EduNbrhd", -ends_with("_Race"), -"MAI", -"Bridges",
+                  -"FSBDirect", -starts_with("CEEB"), -"IntlTestScoreThresholdFlag",
+                  -"Com.App.Acad.Int", -"Intl.Scholarship", -"ConfirmDate_Formatted",
+                  -"College.Since.9th.Grade", -"Primary_Parent_Occupation", 
+                  -"Sec_Parent_Occupation", -"Parent1Degree", -"Parent2Degree",
+                  -"Permanent.Home", -starts_with("Zip"), -"Special.Consideration", 
+                  -"DecisionDateFormatted", -"ConfirmedDate",
+                  -"MeritGPA", -"GPAOrig", -"Parent.1.Education.Level",
+                  -"Parent.2.Educational.Level", -"Visa.Type",-"Hispanic",
+                  -starts_with("SpecialConsideration_"), -starts_with("Question_"),
+                  -starts_with("Harrison_"), -"FirstGen", -"DecisionDate_Formatted",
+                  -"Race")
+
+
+df2 <- domestic[colSums(is.na(domestic))/nrow(domestic) > .1594]
+
+for(i in 1:ncol(domestic)) {
+  domestic[ , i][is.na(domestic[ , i])] <- median(domestic[ , i], na.rm=TRUE)
+}
+
+df3 <- domestic[colSums(is.na(domestic))/nrow(domestic) > .1156]
+
+domestic <-select(domestic, -"HighSchoolCode", -"Citizen", -"OneRace",
+                  -"USStateRegion", -"Geomkt", -"Ethn_HS_YN", -"FullEthn",
+                  -"FullEthn.Race", -"OhioCountyRegion", -"ACEFlag", -"MCFlag",
+                  -"SuppMajor2", -"MeritGPAThresholdFlag")
+
+```
+
+
+#### Collapsing Varaibles
+
+A lot of this code is based on the Race variable and the Major variable which were both a mess. We wanted to consolidate each category for both of those majors and then we moved on to the "smaller" stuff. This included changing variables like County Code, both the citizenships (which we ended up getting rid of anyway), Confirm Code, Which Test Best, and then changing our response variables (retained) so the 1's were No's and the 0's were Yes's.
+
+```{r, eval=FALSE}
+
+# Fixing Race -------------------------------------------------------------
+
+domestic[domestic == "AI"] <- "American Indian or Alaska Native"
+domestic[domestic == "AS"] <- "Asian"
+domestic[domestic == "HS"] <- "Hispanic/Latino"
+domestic[domestic == "MR"] <- "Multi Racial"
+domestic$FullRace[domestic$FullRace == "NC"] <- "Multi Racial"
+domestic[domestic == "PI"] <- "Native Hawaiian or Other Pacific Islander"
+domestic[domestic == "SortOfIntl"] <- "Non-Resident Alien"
+domestic[domestic == "Two or more races"] <- "Multi Racial"
+domestic[domestic == "UK"] <- "Unknown"
+domestic[domestic == "BL"] <- "Black or African American"
+domestic[domestic == "WH"] <- "White"
+domestic$FullRace[domestic$FullRace == "1"] <- "American Indian or Alaska Native"
+domestic$FullRace[domestic$FullRace == "2"] <- "Asian"
+domestic$FullRace[domestic$FullRace == "6"] <- "Hispanic/Latino"
+domestic$FullRace[domestic$FullRace == "7"] <- "Multi Racial"
+domestic$FullRace[domestic$FullRace == "7"] <- "Multi Racial"
+domestic$FullRace[domestic$FullRace == "4"] <- "Native Hawaiian or Other Pacific Islander"
+domestic$FullRace[domestic$FullRace == "9"] <- "Non-Resident Alien"
+domestic$FullRace[domestic$FullRace == "7"] <- "Multi Racial"
+domestic$FullRace[domestic$FullRace == "8"] <- "Unknown"
+domestic$FullRace[domestic$FullRace == "3"] <- "Black or African American"
+domestic$FullRace[domestic$FullRace == "5"] <- "White"
+domestic[domestic == "Hispanic/Latino, White"] <- "Multi Racial"
+domestic[domestic == "Asian, White"] <- "Multi Racial"
+domestic[domestic == "Black or African American, White"] <- "Multi Racial"
+domestic[domestic == "Native Hawaiian or Other Pacific Islander, White"] <- "Multi Racial"
+domestic[domestic == "American Indian or Alaska Native, Hispanic/Latino, White"] <- "Multi Racial"
+domestic[domestic == "American Indian or Alaska Native, Black or African American"] <- "Multi Racial"
+domestic[domestic == "American Indian or Alaska Native, White"] <- "Multi Racial"
+domestic[domestic == "Asian, Native Hawaiian or Other Pacific Islander, White"] <- "Multi Racial"
+domestic[domestic == "Black or African American, Hispanic/Latino"] <- "Multi Racial"
+domestic[domestic == "American Indian or Alaska Native, Asian, White"] <- "Multi Racial"
+domestic[domestic == "Asian, Hispanic/Latino"] <- "Multi Racial"
+domestic[domestic == "Black or African American, Hispanic/Latino, White"] <- "Multi Racial"
+domestic[domestic == "Black or African American, Hispanic/Latino, White"] <- "Multi Racial"
+domestic[domestic == "American Indian or Alaska Native, Hispanic/Latino"] <- "Multi Racial"
+domestic[domestic == "American Indian or Alaska Native, Native Hawaiian or Other Pacific Islander, White"] <- "Multi Racial"
+domestic[domestic == "Asian, Native Hawaiian or Other Pacific Islander"] <- "Multi Racial"
+domestic[domestic == "Hispanic/Latino, Native Hawaiian or Other Pacific Islander, White"] <- "Multi Racial"
+domestic[domestic == "Asian, Hispanic/Latino, Native Hawaiian or Other Pacific Islander, White"] <- "Multi Racial"
+domestic[domestic == "American Indian or Alaska Native, Asian, Black or African American"] <- "Multi Racial"
+domestic[domestic == "Asian, Black or African American, White"] <- "Multi Racial"
+domestic[domestic == "Black or African American, Native Hawaiian or Other Pacific Islander, White"] <- "Multi Racial"
+domestic[domestic == "Asian, Black or African American"] <- "Multi Racial"
+domestic[domestic == "American Indian or Alaska Native, Black or African American, White"] <- "Multi Racial"
+domestic[domestic == "Asian, Hispanic/Latino, White"] <- "Multi Racial"
+domestic[domestic == "NA"] <- NA
+domestic[domestic == "ASWH"] <- "Multi Racial"
+domestic[domestic == "AIWH"] <- "Multi Racial"
+domestic[domestic == "ASWH"] <- "Multi Racial"
+domestic[domestic == "HSWH"] <- "Multi Racial"
+domestic[domestic == "BLWH"] <- "Multi Racial"
+domestic[domestic == "AIHSWH"] <- "Multi Racial"
+domestic[domestic == "AIBLWH"] <- "Multi Racial"
+domestic[domestic == "PIWH"] <- "Multi Racial"
+domestic[domestic == "ASPI"] <- "Multi Racial"
+domestic[domestic == "AIAS"] <- "Multi Racial"
+domestic[domestic == "ASHSWH"] <- "Multi Racial"
+domestic[domestic == "BLHSWH"] <- "Multi Racial"
+domestic$FullRace[domestic$FullRace == "PR"] <- "Multi Racial"
+domestic[domestic == "AIBLHS"] <- "Multi Racial"
+domestic[domestic == "MAWH"] <- "Multi Racial"
+domestic$FullRace[domestic$FullRace == "MA"] <- "Multi Racial"
+domestic[domestic == "ASHS"] <- "Multi Racial"
+domestic[domestic == "ASPIWH"] <- "Multi Racial"
+domestic[domestic == "AIHS"] <- "Multi Racial"
+domestic[domestic == "BLHS"] <- "Multi Racial"
+domestic[domestic == "AIMAWH"] <- "Multi Racial"
+domestic[domestic == "ASBLWH"] <- "Multi Racial"
+domestic[domestic == "PRWH"] <- "Multi Racial"
+domestic[domestic == "AIASMA"] <- "Multi Racial"
+domestic[domestic == "AIASWH"] <- "Multi Racial"
+domestic[domestic == "ASBL"] <- "Multi Racial"
+domestic[domestic == "AIBL"] <- "Multi Racial"
+domestic[domestic == "BLPR"] <- "Multi Racial"
+domestic[domestic == "ASHSPIWH"] <- "Multi Racial"
+domestic[domestic == "AIBLHSWH"] <- "Multi Racial"
+domestic[domestic == "AIASBLWH"] <- "Multi Racial"
+domestic[domestic == "BLPRWH"] <- "Multi Racial"
+domestic[domestic == "MAPI"] <- "Multi Racial"
+domestic[domestic == "AIASBL"] <- "Multi Racial"
+domestic[domestic == "ASBLPIWH"] <- "Multi Racial"
+domestic[domestic == "AIPIWH"] <- "Multi Racial"
+domestic[domestic == "ASBLHS"] <- "Multi Racial"
+
+# Collapsing Almost Full Race  --------------------------------------------
+
+domestic$AlmostFullRace[domestic$AlmostFullRace=="Multi Racial"]<-"Non-White"
+domestic$AlmostFullRace[domestic$AlmostFullRace=="Asian"]<-"Non-White"
+domestic$AlmostFullRace[domestic$AlmostFullRace=="Black or African American"]<-"Non-White"
+domestic$AlmostFullRace[domestic$AlmostFullRace=="Hispanic/Latino"]<-"Non-White"
+domestic$AlmostFullRace[domestic$AlmostFullRace=="American Indian or Alaska Native"]<-"Non-White"
+domestic$AlmostFullRace[domestic$AlmostFullRace=="MA"]<-"Non-White"
+domestic$AlmostFullRace[domestic$AlmostFullRace=="PR"]<-"Non-White"
+domestic$AlmostFullRace[domestic$AlmostFullRace=="Native Hawaiian or Other Pacific Islander"]<-"Non-White"
+
+
+# Fixing Major ------------------------------------------------------------
+
+domestic[domestic == "00US"] <- "ASU1"
+domestic[domestic == "ASU2"] <- "ASU1"
+domestic[domestic == "ASU3"] <- "ASU1"
+domestic[domestic == "ASU4"] <- "ASU1"
+domestic[domestic == "ASUS"] <- "ASU1"
+domestic[domestic == "AP71"] <- "RC71"
+domestic[domestic == "AP72"] <- "AS72"
+domestic[domestic == "AS74"] <- "EA74"
+domestic[domestic == "AP87"] <- "RC87"
+domestic[domestic == "AP88"] <- "RC88"
+domestic[domestic == "APAN"] <- "ASAN"
+domestic[domestic == "BUAN"] <- "ASAN"
+domestic[domestic == "EAAN"] <- "ASAN"
+domestic[domestic == "FAAN"] <- "ASAN"
+domestic[domestic == "RCAN"] <- "ASAN"
+domestic[domestic == "BUEB"] <- "RCEB"
+domestic[domestic == "ASEN"] <- "APEN"
+domestic[domestic == "BUEN"] <- "APEN"
+domestic[domestic == "EAEN"] <- "APEN"
+domestic[domestic == "FAEN"] <- "APEN"
+domestic[domestic == "RCEN"] <- "APEN"
+domestic[domestic == "0056"] <- "00UH"
+domestic[domestic == "RCEN"] <- "APEN"
+domestic[domestic == "APSH"] <- "APCH"
+domestic[domestic == "ASEP"] <- "BUEP"
+domestic[domestic == "EAEP"] <- "BUEP"
+domestic[domestic == "FAEP"] <- "BUEP"
+domestic[domestic == "APEP"] <- "BUEP"
+domestic[domestic == "AS76"] <- "APES"
+domestic[domestic == "ASES"] <- "APES"
+domestic[domestic == "BUES"] <- "APES"
+domestic[domestic == "EAES"] <- "APES"
+domestic[domestic == "FAES"] <- "APES"
+domestic[domestic == "IS76"] <- "APES"
+domestic[domestic == "ISES"] <- "APES"
+domestic[domestic == "RCES"] <- "APES"
+domestic[domestic == "RCET"] <- "APET"
+domestic[domestic == "RCHT"] <- "APHT"
+domestic[domestic == "ASIM"] <- "APIM"
+domestic[domestic == "BUIM"] <- "APHT"
+domestic[domestic == "EAIM"] <- "APHT"
+domestic[domestic == "FAIM"] <- "APHT"
+domestic[domestic == "RCIM"] <- "APHT"
+domestic[domestic == "APIM"] <- "APHT"
+domestic[domestic == "ASIM"] <- "APHT"
+domestic[domestic == "RCK3"] <- "BUK3"
+domestic[domestic == "RCKA"] <- "BUKA"
+domestic[domestic == "RCKM"] <- "BUKM"
+domestic[domestic == "ASPM"] <- "APPM"
+domestic[domestic == "BUPM"] <- "APPM"
+domestic[domestic == "EAPM"] <- "APPM"
+domestic[domestic == "FAPM"] <- "APPM"
+domestic[domestic == "RCPM"] <- "APPM"
+domestic[domestic == "ASRT"] <- "APRT"
+domestic[domestic == "ASSU"] <- "APSU"
+domestic[domestic == "BUSU"] <- "APSU"
+domestic[domestic == "EASU"] <- "APSU"
+domestic[domestic == "FASU"] <- "APSU"
+domestic[domestic == "RCSU"] <- "APSU"
+domestic[domestic == "EASW"] <- "ASSW"
+domestic[domestic == "BU15"] <- "AS15"
+domestic[domestic == "RC50"] <- "BU50"
+domestic[domestic == "EA21"] <- "AS21"
+domestic[domestic == "EA21"] <- "AS21"
+domestic[domestic == "EA25"] <- "AS25"
+domestic[domestic == "EA35"] <- "AS35"
+domestic[domestic == "EA45"] <- "AS45"
+domestic[domestic == "EA46"] <- "AS46"
+domestic[domestic == "EA52"] <- "AS52"
+domestic[domestic == "FA86"] <- "AS86"
+domestic[domestic == "EA97"] <- "AS97"
+domestic[domestic == "EA67"] <- "EAGW"
+domestic[domestic == "RCCJ"] <- "ASCJ"
+domestic[domestic == "EA52"] <- "AS52"
+domestic[domestic == "EA93"] <- "ASEA"
+domestic[domestic == "EA96"] <- "EALN"
+domestic[domestic == "EA43"] <- "EALZ"
+domestic[domestic == "EA52"] <- "AS52"
+domestic[domestic == "FAJA"] <- "ASJA"
+domestic[domestic == "RCTS"] <- "APTS"
+domestic[domestic == "EA52"] <- "RCSU"
+domestic[domestic == "ASSU"] <- "APSU"
+domestic[domestic == "RCPC"] <- "APPC"
+
+# Variables to edit -------------------------------------------------------
+
+domestic$OhioCountyRegion[domestic$OhioCountyRegion==""]<-"None"
+domestic$USStateRegion[domestic$USStateRegion==""]<-"Other"
+domestic$Citizenship[domestic$Citizenship==""]<-"US"
+domestic$Citizenship2[domestic$Citizenship2==""]<-"US"
+domestic$Citizenship[domestic$Citizenship=="PR"]<-"Non-Citizen"
+
+domestic$ConfirmCode[domestic$ConfirmCode==""]<-"N"
+domestic$WhichTestBest[domestic$WhichTestBest==""]<-"NO TEST"
+
+domestic$retained[domestic$retained == "1"] <- "No"
+domestic$retained[domestic$retained == "0"] <- "Yes"
+
+```
+
+#### Split to Training/Validation
+
+To ensure that the model is built off of using No as the base and Yes as the event so that is why we use the as.factor/relevel functions. Then we create a training index, our training/validation data, and then everything else we need in terms of cross validation.
+
+```{r, eval = FALSE}
+domestic$retained <- as.factor(domestic$retained)
+
+domestic$retained <- relevel((domestic$retained), ref = "No")
+
+trainIndex<-createDataPartition(domestic$retained, p=0.7, list=FALSE, times=1)
+head(trainIndex)
+
+set.seed(13)
+
+training<-domestic[trainIndex, ]
+valid<-domestic[-trainIndex, ]
+
+training$retained <- relevel((training$retained), ref = "No")
+valid$retained <- relevel((valid$retained), ref = "No")
+training$retained <- select(training, -DateFrom)
+
+detectCores() 
+
+cvindx<-createFolds(trainIndex, k=10, returnTrain = TRUE)
+ctrl <- trainControl(method="cv", index=cvindx, summaryFunction = twoClassSummary, classProbs = TRUE)
+
+```
+
+
+### Modeling {.tabset}
+
+For our project, we wanted to incorporate 7 different models when trying to look at our data:
+
+1) Random Forest
+
+2) Boosted Tree
+
+3) XGBoost
+
+4) Linear Regression Stepwise
+
+5) Linear Regression Stepwise (Interactions)
+
+6) Neural Network (Logistic Terms)
+
+7) Neural Network (Random Forest Terms)
+
+#### Model 1 - Random Forest
+
+- 1000 trees
+
+- Tunegrid Settings:
+- mtry = c(4, 10, 20)
+- splitrule = gini
+- min. node size = c(300,400,500)
+
+```{r,eval=FALSE}
+
+tunegrid <- expand.grid(
+  .mtry = c(4, 10, 20),
+  .splitrule = "gini",
+  .min.node.size = c(300,400,500)
+)
+
+
+y<-training$retained
+x<-select(training, -retained)
+cl <- makePSOCKcluster(7)
+registerDoParallel(cl)
+rforest<-train(x=x, y=y, method="ranger", tuneGrid=tunegrid, metric="ROC",
+               num.trees=1000, importance="impurity", trControl=ctrl )
+
+
+saveRDS(rforest, "rforest_final.RDS")
+rforest
+
+
+stopCluster(cl)
+```
+
+```{r, EVAL = FALSE}
+p.rforest.t<-predict(rforest, data=training, type="prob")
+rt<-roc(training$retained,  p.rforest.t[,2])
+r.rforest.auc.t<-rt$auc
+r.rforest.auc.t
+
+p.rforest<-predict(rforest, newdata = valid, type="prob")
+r<-roc(valid$retained,  p.rforest[,2])
+r.rforest.auc<-r$auc
+r.rforest.auc
+
+```
+
+
+#### Model 2 - Boosted Tree
+- Grid Settings:
+- num of trees = seq(50,150,50),
+- interaction depth = c(10, 20),
+- shrinkage = c(0.1, 0.01),
+- minimum observations per node = c(25))
+
+```{r,eval=FALSE}
+set.seed(13)
+
+Grid <- expand.grid( n.trees = seq(50,150,50),
+                     interaction.depth = c(10, 20),
+                     shrinkage = c(0.1, 0.01),
+                     n.minobsinnode=c(25))
+Grid
+
+cl <- makePSOCKcluster(7)
+registerDoParallel(cl)
+
+gb.tree <- train(retained~., 
+                 data=training, 
+                 method = 'gbm', 
+                 trControl=ctrl, 
+                 tuneGrid=Grid, 
+                 metric='ROC')
+
+stopCluster(cl)
+
+
+```
+
+```{r, eval=FALSE}
+p.gbtree<-predict(gb.tree, data=training, type="prob")
+rt<-roc(training$retained,  p.gbtree[,2])
+r.gbtree.auc.t<-rt$auc
+r.gbtree.auc.t
+
+p.gbtree<-predict(gb.tree, newdata=valid, type="prob")
+r<-roc(valid$retained,  p.gbtree[,2])
+r.gbtree.auc<-r$auc
+r.gbtree.auc
+```
+
+
+#### Model 3 - XGBoost
+- XGrid Settings:
+- nrounds = 100
+- max depth = c(3, 6)
+- eta = c(0.001,0.1),
+- gamma = c(0.5, 0.75)
+- colsample_bytree = c(0.3, 1)
+- min_child_weight = c(0,15)
+- subsample = c(0.3,1)
+
+```{r,eval=FALSE}
+set.seed(13)
+XGrid <-  expand.grid(nrounds = 100,
+                     max_depth = c(3,6),
+                     eta = c(0.001,0.1),
+                     gamma = c(0.5, 0.75),
+                     colsample_bytree = c(0.3, 1),
+                     min_child_weight = c(0,15),
+                     subsample = c(0.3,1)
+)
+cl <- makePSOCKcluster(7)
+registerDoParallel(cl)
+
+xgboost <- train(retained~., 
+                 data = training,
+                 method = "xgbTree",
+                 trControl=ctrl, 
+                 tuneGrid=XGrid, 
+                 metric='ROC')
+
+stopCluster(cl)
+
+```
+
+```{r, eval=FALSE}
+p.xgboost<-predict(xgboost, data=training, type="prob")
+rt<-roc(training$retained,  p.xgboost[,2])
+r.xgboost.auc.t<-rt$auc
+r.xgboost.auc.t
+
+p.xgboost<-predict(xgboost, newdata=valid, type="prob")
+r<-roc(valid$retained,  p.xgboost[,2])
+r.xgboost.auc<-r$auc
+r.xgboost.auc
+```
+
+#### Model 4 - Linear Regression Stepwise
+
+```{r,eval=FALSE}
+lrstep<-train(retained~., data=training, method="glmStepAIC", direction="both", metric="ROC", trControl=ctrl, trace=0)
+
+lrstep$finalModel$coefficients<- lrstep$finalModel$coefficients[-1]
+
+names(lrstep$finalModel$coefficients) <- c("Gender", "Confirm Code", "RankPercent", "ClassRank"
+                                           , "ClassSize", "GPA", "ACTBest", "ACTComposite"
+                                           , "ACTEng", "ACTMath", "ACTRdng", "ACTSci", "ACTWRSC"
+                                           , "AcadRS", "AlmostFullRace", "ConCode", "StudentType"
+                                           , "retained", "AlumniConnection_F", "AlumniConnection_M"
+                                           , "AlumniConnection_O", "AlumniConnection_O - Other"
+                                           ,  "AlumniConnection_S","AlumniConnection_S - Sibling"
+                                            ,"AlumniConnection_NA","Division_AP"                 
+                                            ,"Division_AS","Division_BU"                 
+                                           , "Division_CAS" ,"Division_CEC"                
+                                           , "Division_CEHS","Division_EA"                 
+                                            ,"Division_FA","Division_FSB"                
+                                            ,"Status_E","StateResidency_R"            
+                                           , "ApplicationType_OF","ApplicationType_OM"          
+                                            ,"DecisionType_DY","DecisionType_H"              
+                                           , "DecisionType_K","DecisionType_NA"             
+                                            ,"HsType_1","HsType_2"                    
+                                            ,"HsType_3","HsType_Public"               
+                                            ,"HsType_NA","ON_1"                        
+                                            ,"ON_2","ON_3"                        
+                                            ,"ON_4","ON_NA"                       
+                                            ,"MiamiRanks_1","MiamiRanks_2"                
+                                            ,"MiamiRanks_3","MiamiRanks_noFAFSA"          
+                                            ,"MiamiRanks_NA","WhichTestBest_ACT"           
+                                            ,"WhichTestBest_SAT","Concentration_BB"            
+                                           ,"Concentration_PM","SuppMajor3_APEE")
+```
+
+```{r, eval= FALSE}
+
+pst<-predict(lrstep, type="prob")
+rst<-roc(training$retained, pst[,2])
+
+ps<-predict(lrstep, newdata=valid, type="prob")
+rs<-roc(valid$retained, ps[,2])
+df.step<-lrstep$finalModel$df.null-lrstep$finalModel$df.residual
+
+```
+
+#### Model 5  - Linear Regression Stepwise (Interactions)
+
+```{r,eval=FALSE}
+f<-formula(retained ~ (ConfirmCodeY + ClassSize + GPA + ACTComposite + ACTEng + 
+                         ACTMath + ACTWRSC + AcadRS + `AlmostFullRaceNon-White` + 
+                         AlmostFullRaceWhite + AlumniConnection_O + `\`AlumniConnection_O -
+                         Other\`` + 
+                         AlumniConnection_S + AlumniConnection_NA + Division_AP + 
+                         Division_BU + Division_EA + Division_FSB + ApplicationType_OF + 
+                         ApplicationType_OM + DecisionType_H + DecisionType_K +
+                         DecisionType_NA + 
+                         HsType_2 + HsType_3 + HsType_Public + HsType_NA + ON_3 + 
+                         ON_4 + MiamiRanks_noFAFSA + WhichTestBest_ACT + WhichTestBest_SAT +
+                         SuppMajor3_APEE) ^2)
+
+full<-glm(f, data=training, family="binomial")
+null<-glm(retained~1, data=training, family="binomial")
+step2<-step(null, list(lower=formula(null), upper=formula(full)), data=training, direction="both", trace=0)
+
+```
+
+```{r, eval= FALSE}
+psit<-predict(step2, type="response")
+rsit<-roc(training$retained, psit)
+psi<-predict(step2, newdata=valid, type="response")
+rsi<-roc(valid$retained, psi)
+df.step2<-step2$df.null-step2$df.residual
+```
+
+#### Model 6 - Neural Network (Logistic Terms)
+
+The highest ROC that we were able to attain was .501 which presents 8 hidden units.This also led to a AUC of .4999 and a validation AUC of .4998. 
+```{r,eval=FALSE}
+terms2 <- lrstep$fullmodel$coefficients
+
+cl <- makePSOCKcluster(6) 
+registerDoParallel(cl)
+nnetFit<-train(x=training[,terms2], y=training$retained, 
+               method="nnet", 
+               metric="ROC", 
+               linout=FALSE,
+               preProcess = c("range"), 
+               tuneGrid = tunegrid, 
+               
+               trace=FALSE,
+               maxit=100,
+               MaxNWts=numWts,
+               trControl=ctrl)
+stopCluster(cl) 
+nnetFit
+
+plotnet(nnetFit$finalModel, cex_val=0.8)
+
+```
+
+```{r}
+p.nnet<-predict(nnetFit, data=training, type="prob")
+r.nnt<-roc(training$retained,  p.nnet[,2])
+r.nnet.auct<-r.nnt$auc
+
+p.nnet<-predict(nnetFit, newdata=valid, type="prob")
+r.nn<-roc(valid$retained,  p.nnet[,2])
+r.nnet.auc<-r.nn$auc
+```
+
+
+### Model Comparison {.tabset}
+
+#### Random Forest
+
+Area under the curve: 0.9933
+Area under the curve: 0.7053
+
+AUC Difference: 0.288
+
+I think the AUC values are a little too far off to be considered good enough for this data set. We have other models that we ran that have less of a difference.
+
+```{r}
+rforest
+plot(rforest)
+
+r.rforest.auc.t
+r.rforest.auc
+```
+
+#### Boosted Tree
+
+Area under the curve: 0.5509
+Area under the curve: 0.6236
+
+AUC Difference: 0.288
+
+We still think that this is a little too wide of a difference for us to consider this the final model used. 
+```{r}
+gb.tree
+plot(gb.tree)
+
+r.gbtree.auc.t
+r.gbtree.auc
+```
+
+#### XGBBoost
+
+Area under the curve: 0.5509
+Area under the curve: 0.6138
+
+AUC Difference: 0.0629
+```{r}
+xgboost
+plot(xgboost)
+
+r.xgboost.auc.t
+r.xgboost.auc
+```
+
+#### Linear Stepwise
+```{r}
+lrstep
+```
+
+#### Second Order Stepwise
+```{r}
+step2
+```
+
+#### Neural Network with Logistic Terms
+```{r}
+nnetFit
+```
+
+
+Include tables, charts and which model you chose and why
+
+### Comparison {.tabset}
+
+#### ROC Objects
+```{r, eval = FALSE}
+results<-data.frame(valid$retained, p.gbtree[,2], p.xgboost[,2])
+```
+
+#### Lift
+```{r, eval = FALSE}
+pred6<-prediction(results$p.xgboost, results$valid.retained)
+lift6<-performance(pred6, "lift", "rpp")
+plot(lift6,main="Lift chart", col="brown1", ylim=c(0,2))
+
+varImp(xgboost)
+
+confusionMatrix(data=results$Cut, reference=results$valid.retained, positive="No")
+
+```
+
+``` {r, eval = FALSE}
+pred<-prediction(results$ps, results$valid.retained)
+pred2<-prediction(results$psit, results$valid.retained)
+pred3<-prediction(results$p.rforest, results$valid.retained)
+pred4<-prediction(results$p.gbtree, results$valid.retained)
+pred5<-prediction(results$p.nnet, results$valid.retained)
+pred6<-prediction(results$p.xgboost, results$valid.retained)
+lift<-performance(pred, "lift", "rpp")
+lift2<-performance(pred2, "lift", "rpp")
+lift3<-performance(pred3, "lift", "rpp")
+lift4<-performance(pred4, "lift", "rpp")
+lift5<-performance(pred5, "lift", "rpp")
+lift6<-performance(pred6, "lift", "rpp")
+plot(lift,main="Lift chart", col="brown1", ylim=c(0,2))
+plot(lift2, col="blue", add=T)
+plot(lift3, col="chocolate2", add=T)
+plot(lift4, col="chartreuse", add=T)
+plot(lift5, col="darkmagenta", add=T)
+plot(lift6, col="black", add=T)
+legend(0.6, 1, legend=c("First Order Log", "Second Order Log", "Random Forest", "Boosted Tree", "NN1", "xgboost"),
+       col=c("brown1", "blue", "chocolate2", "chartreuse", "darkmagenta", "black"), lty=1, cex=0.8)
+```
+
+```{r, eval = FALSE}
+plot(lift,main="Lift chart-zoom", col="brown1", ylim=c(0,2), xlim=c(0,0.3))
+plot(lift2, col="blue", add=T)
+plot(lift3, col="chocolate2", add=T)
+plot(lift4, col="chartreuse", add=T)
+plot(lift5, col="darkmagenta", add=T)
+plot(lift6, col="black", add=T)
+legend(0.05, 1, legend=c("First Order Log", "Second Order Log", "Random Forest", "Boosted Tree", "NN1", "xgboost"),
+       col=c("brown1", "blue", "chocolate2", "chartreuse", "darkmagenta", "black"), lty=1, cex=0.8)
+```
+
+#### ROC
+```{r, eval = FALSE}
+p<-ggroc(roc)
+p+scale_color_discrete(name="Model")+theme_bw()+xlab("True Negative Rate")+ylab("True Positive Rate")
+```
+
+```{r, eval = FALSE}
+roc<-list( "Step"=ps, "Sec.Order"=psit, "Random Forest"=r.rforest, "Small Tree"=r.small.valid, "GB Tree"=r.gbtree, "XGBoost"=r.xgbtree)
+
+p<-ggroc(roc)
+p+scale_color_discrete(name="Model")+theme_bw()
+```
+
+#### Cutoff Analysis
+```{r, eval = FALSE}
+df<-data.frame(lift6@y.values,  lift6@alpha.values)
+colnames(df)<-c("lift", "cutoff")
+head(df)
+
+coords(rt,"best", ret="threshold")
+```

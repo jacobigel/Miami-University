@@ -1,0 +1,14 @@
+base
+DataExplorer
+tidyverse
+ggplot2
+tibble
+tidyr
+readr
+purrr
+dplyr
+stringr
+forcats
+stringi
+lubridate
+fastDummies

@@ -1,0 +1,10 @@
+Fish	Goldfish	4.75	0.02
+Fish	Guppy	1.25	0.01
+Octopus	Argonaut	99.99	0.03
+ChowBag	17.5	2.5
+WormCan	5.75	1.0
+WormCan	5.75	1.0
+Dog	Poodle	725.00	0.3
+Dog	Bulldog	450.50	0.2
+Cat	Persian	1400.00	0.1
+Cat	Meincoon	325.00	0.15

@@ -1,0 +1,57 @@
+---
+title: "Salk Polio Vaccine Trials - Samuel Vaughan & Jacob Igel"
+date:  "Last complied on `r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+Use this template to answer the following questions. Work in groups of 2-3. You must turn in a knitted html document for any credit.  Please make sure to form your group in Canvas and just turn in one copy per group.
+
+1. List the problems with the first Salk trial.
+
+The problem with the first Salk Trial was that experiment was not double-blinded (or single-blind). This resulted in an unwanted bias between Physicians who subconsciously diagnosed Polio to patients showing mild symptoms.
+
+
+2. How did the second Salk trial overcome the problems in the first Salk trial?
+
+The second Salk trial focused only on the children whose parents consented for the vaccination. The first trial had a bias against the vaccinated.
+
+
+3. Why are the sample sizes so large for the Salk trials?
+
+The bigger the sample size, the better it is for randomization which could help find out exactly who was susceptible and who was not. Since the first experiment was against those who had the vaccine: the treatment group that got the vaccine was more susceptible to Polio while the control group that did not get the vaccine was less susceptible.
+
+
+4. Find an example of another failed medical experiment. Be sure to articulate why it failed.
+
+With randomized control trials that compare how one group responds to a treatment compared to how an identical group fares without the treatment, which was thought to be soundproof, caused to be faulty without randomization.The questions researches asked, how they set up the studies, how they recruited the studies, and many more examples did not have the true aspect of randomization which therefore caused studies with skewed results. Here are some direct quotes from the study below:
+
+"Peer-reviewed studies have come to opposite conclusions on whether using cell phones can cause brain cancer, whether sleeping more than eight hours a night is healthful or dangerous, whether taking aspirin every day is more likely to save your life or cut it short, and whether routine angioplasty works better than pills to unclog heart arteries."
+
+"These were articles that helped lead to the widespread popularity of treatments such as the use of hormone-replacement therapy for menopausal women, vitamin E to reduce the risk of heart disease, coronary stents to ward off heart attacks, and daily low-dose aspirin to control blood pressure and prevent heart attacks and strokes."
+
+"Ioannidis was putting his contentions to the test not against run-of-the-mill research, or even merely well-accepted research, but against the absolute tip of the research pyramid. Of the 49 articles, 45 claimed to have uncovered effective interventions. Thirty-four of these claims had been retested, and 14 of these, or 41 percent, had been convincingly shown to be wrong or significantly exaggerated."
+
+
+[Study](https://www.theatlantic.com/magazine/archive/2010/11/lies-damned-lies-and-medical-science/308269/)
+
+
+5. Plot the number of cases of polio in the United States by year; the data are in _polio.csv_.  The eradication of polio is obvious as time increases.  What is noticeable about the period before the introduction of the polio vaccine?
+
+Before the introduction of the vaccine, parents were sheltering their kids decreasing their immune system ultimately driving up polio cases or some kids were getting misdiagnosed with polio due to the single-blinded experiment type which results in a increase in cases. This made the case situation worse before it could even get better.
+
+
+```{r}
+
+df <- read.csv("/Users/jacobigel/Desktop/School/ISA365-A/Datasets/polio.csv")
+
+plot(df$year, df$PolioCases)
+
+```
+

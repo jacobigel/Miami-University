@@ -1,0 +1,56 @@
+<!--Jacob Igel, Section B, 11/13/19-->
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Even or Odd</title>
+	<link rel="stylesheet" type="text/css" href="styleme2.css">
+</head>
+<body id="body">
+	<h1>Jacob Igel</h1>
+<div style="text-align: center;">
+	<button onclick="location.href= 'index.html';"><b>Home</b></button>
+	<button onclick="location.href= 'classes.html';"><b>Classes</b></button>
+	<button onclick="location.href= 'my_favorite.html';"><b>My Favorite</b></button>
+	<button onclick="location.href= 'my_mood.html';"><b>My Mood</b></button>
+	<button onclick="location.href= 'my_neighbors.html';"><b>My Neighbors</b></button>
+	<button onclick="location.href= 'programs.html';"><b>My Programs</b></button>
+</div>
+<hr>
+
+<h2>Check whether a number is Even or Odd</h2>
+
+<p>
+Enter an integer number:
+<input type="text" id="intbox" size="10" value="" />
+</p>
+<p>
+<input type="button" value="Check The Number"
+  onclick="number = document.getElementById('intbox').value;
+  	if(number%2==0)
+  {
+  	number_result = 'Even';
+  }
+
+  else
+  {
+  	number_result = 'Odd';
+  }
+  
+  document.getElementById('result').value =number_result;" />
+</p>
+<p>
+The Input number is:
+<input type="text" id="result" size="10" value="" />
+</p>
+
+<hr>
+<div style="text-align: center;">
+	<button onclick="document.getElementById('body').style.backgroundColor ='Dodgerblue';"> <b>Change Background Color</b></button>
+</div>
+
+
+</body>
+</html>

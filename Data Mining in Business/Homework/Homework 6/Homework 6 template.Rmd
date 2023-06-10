@@ -1,0 +1,270 @@
+---
+title: "Homework 6 - Jacob Igel"
+ 
+output: 
+  html_document:
+    
+    toc: true
+    toc_float: true
+  
+  
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+## Lending Club Modeling: Logistic Reg
+
+We will continue constructing models on the lending club data where the goal is to predict the loans that will be charged off within 12 months.
+
+```{r}
+pacman::p_load(tidyverse, nnet, caret, doParallel, DataExplorer, fastDummies, ROCR, pROC, NeuralNetTools)
+```
+
+
+1. Read in the files “training.RDS” and “valid.RDS”.  Verify the proportions of the Target variable in the training and validation sample.  And let's also get rid of the wacky column names.
+
+```{r}
+training <- readRDS("training.RDS")
+valid <- readRDS("valid.RDS")
+
+prop.table(table(training$Target))
+prop.table(table(valid$Target))
+```
+
+
+
+To save us more pain and suffering, create dummies for the following variables:  application_type, initial_list_status, disbursement_method.  This is because when `glm()` encounters a variable with 2 levels it will automatically create the dummy variables, but when it does it modifies the column names.  We will need to select the column names from the data, efficiently.  So we need them to match. 
+
+```{r}
+training<-dummy_columns(training, select_columns = c("application_type", "initial_list_status", "disbursement_method"), remove_first_dummy = TRUE, remove_selected_columns = TRUE)
+
+valid<-dummy_columns(valid, select_columns = c("application_type", "initial_list_status", "disbursement_method"), remove_first_dummy = TRUE, remove_selected_columns = TRUE)
+```
+
+
+To save us pain and suffering, let's remove the spaces from the column names.  Use the code below to do just that.
+
+```{r}
+names<-colnames(training)
+tidy.names <- make.names(names, unique=TRUE)
+colnames(training)<-tidy.names
+
+names<-colnames(valid)
+tidy.names <- make.names(names, unique=TRUE)
+colnames(valid)<-tidy.names
+
+```
+
+
+
+
+2. Set up the `ctrl` object for the logistic regression model.
+
+If we cross validated, we would be using the lowest AUC like 10 different times so it doesn't make sense.
+
+Lowest AUC
+
+```{r}
+
+ ctrl<-trainControl(method="none", summaryFunction = twoClassSummary, classProbs = TRUE, savePredictions = TRUE)
+
+```
+
+3. Because we are going to need it for the stepwise models, construct a full logistic regression model for Target and show the model degrees of of freedom.
+
+Look at full model to make sure things are okay to be there
+
+```{r}
+
+full<-train(Target ~., data=training, method="glm", family="binomial", metric="ROC", trControl=ctrl)
+options(scipen = 999)
+
+df.full<-full$finalModel$df.null-full$finalModel$df.residual
+df.full
+
+#lr <- glm(Target ~., data=training, family="binomial")
+
+```
+
+4. Construct a stepwise model with linear terms on the training data. Calculate the model degrees of freedom. This will take a bit so be patient. 
+
+```{r}
+
+step<-train(Target ~., data=training, method="glmStepAIC", direction="both", metric="ROC", trControl=ctrl, trace=0)
+
+df.step<-step$finalModel$df.null-step$finalModel$df.residual
+df.step
+
+```
+
+5. Using the stepwise model above, interpret the coefficient for homeownership_OWN (meaning it a 1 if they own their house).
+
+If a person is owns a house the odds they own a house are 0.732844 times higher compared to someone who does not own a house given every other variable remains the same.
+
+if inside of EXP is negative, odds are decreasing 
+
+if inside of EXP is negative, odds are increasing
+
+
+## Exam question
+Make sure that you include the base level when interpreting coefficients
+
+If a person is owns a house the odds they own a house are 0.732844 times higher compared to someone who does not own a house compared to those who rent a home given every other variable remains the same.
+```{r}
+
+summary(step)
+exp(-0.31082240)
+
+```
+
+6. Get the training and the validation AUC for this model.  Comment on this model compared to the ensemble models in the last homework.
+
+With a difference of 0.0271, comparatively it is right between the differences in AUC values with the gb.tree and the xg.boost in the last homework. It is not a bad model and there is not a lot of difference between the training and validation meaning that the model is not too overfit and will do a good job in predicting other samples.
+
+```{r}
+pst<-predict.train(step, type="prob")
+rst<-roc(training$Target, pst[,2])
+rst$auc
+
+ps<-predict.train(step, newdata=valid, type="prob")
+rs<-roc(valid$Target, ps[,2] )
+rs$auc
+```
+
+7. Why don't we use cross validation when constructing a logistic regression model?
+
+When we are constructing a logistic regression model, we do not want to use cross validation because it is such a low variance model. It is such a stable model that we do not need to use cross validation with it.
+
+8. If I had a data set with 35 continuous variables (such that all possible two factor interactions were possible to fit) how many degrees of freedom would a model with all linear effects and all possible two factor interactions contain?
+
+24
+
+# correct answer
+
+choose(35,2)+35
+630
+
+```{r}
+step$finalModel$formula
+
+f <- formula(Target ~ (dti + funded_amnt + installment + int_rate + mo_sin_old_rev_tl_op + 
+    mo_sin_rcnt_rev_tl_op + mo_sin_rcnt_tl + pub_rec + emp_length_..1.year + 
+    emp_length_1.year + emp_length_10..years + emp_length_2.years + 
+    emp_length_3.years + emp_length_4.years + emp_length_5.years + 
+    emp_length_6.years + emp_length_7.years + grade_B + grade_C + 
+    grade_D + grade_E + grade_F + home_ownership_MORTGAGE + home_ownership_OWN + 
+    purpose_debt_consolidation + purpose_medical + purpose_other + 
+    issue_month_Aug + issue_month_Jan + issue_month_Sep + verification_status_Source.Verified + 
+    verification_status_Verified + sub_gradeB2 + application_type_Joint.App + 
+    initial_list_status_w)^2)
+
+full2<-glm(f, data=training, family="binomial")
+null<-glm(Target~1, data=training, family="binomial")
+step2<-step(null, list(lower=formula(null), upper=formula(full)), data=training, direction="both", trace=0)
+
+df.step2<-step2$df.null-step2$df.residual
+df.step2
+
+choose(35,2)+35
+
+#or
+
+((35 * 34)/2) + 35
+```
+
+
+## Lending Club Modeling: Neural Networks
+
+9. Create the trainIndex object as shown below and set up the `ctrl` object for a Neural Network model. Be sure to set the seed to 13.
+
+```{r}
+trainIndex<-seq(1:nrow(training))
+
+set.seed(13)
+
+cvindx<-createFolds(trainIndex, k=10, returnTrain = TRUE)
+ctrl <- trainControl(method="cv", index=cvindx, summaryFunction = twoClassSummary, classProbs = TRUE)
+
+
+```
+
+10. We are going to set up a Neural Network model to run with just the variables selected from the stepwise regression. First set up the tuning parameter grid as we did for the models in the notes.  Be sure to set the maxSize for the model and the numWts.
+
+```{r}
+
+tunegrid<-expand.grid( .size=1:10, .decay= c(0, 0.1, 0.5))
+maxSize<-max(tunegrid$.size)
+
+numWts<-500 
+
+
+```
+
+
+11. Show the terms from linear regression.  Note if the intercept is listed, you will need to remove it from the terms.
+
+```{r}
+terms<-names(step$finalModel$coefficients)
+
+terms<-terms[-1]
+terms
+```
+
+
+12. Run the NN model using a logistic activation function and the tuning grid you created above.  Use parallel processing.  Describe the final model.
+
+What does it look like? 35-1-1 network with 38 weights
+
+How many hidden units?  3
+1 hidden layer
+
+What is the activation function? x=training[,terms], y=training$Target
+logistic activation
+
+
+# find highest ROC and thats how you find the hidden units(size)
+```{r}
+cl <- makePSOCKcluster(6)
+registerDoParallel(cl)
+
+nnetFit<-train(x=training[,terms], y=training$Target, 
+               method="nnet", 
+               metric="ROC", 
+               linout=FALSE,
+               preProcess = c("range"), 
+               tuneGrid = tunegrid, 
+              
+               trace=FALSE,
+               maxit=100,
+               MaxNWts=numWts,
+               trControl=ctrl)
+
+
+stopCluster(cl) 
+nnetFit
+
+plotnet(nnetFit$finalModel, cex_val=0.8)
+```
+
+
+13. How many weights were estimated in this final model? 
+
+```{r}
+length(nnetFit$finalModel$wts)
+
+```
+
+14.  Verify the answer in 11 by "hand".  In other words, like it was on a test.
+
+
+35 * 1 + 1 + 1 + 1 = 38
+
+
+
+

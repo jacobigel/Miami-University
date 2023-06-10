@@ -1,0 +1,130 @@
+---
+title: "Comparing Landing Pages - Jacob Igel & Samuel Vaughan"
+date:  "Last complied on `r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+An online retailer ran a test to determine which of two landing pages for their website produces more sales.  The retailer's website testing tool randomly assigned users to either see version A or version B and the analtyics platform recorded which version each visitor saw and how much that visitor purchases.  The data from the test consists of 11,563 rows where each row represents a site visit and indicates which version of the visitor saw and how much was purchased. 
+
+The steps below will step you through an analysis of this test.  Answer the questions using either code or text.
+
+1. Read in the data file "LandingPages.csv".s  Use the option `stringsAsFactors=TRUE`.  Show the `head()` of the df.
+
+```{r}
+df <- read.csv("/Users/jacobigel/Desktop/School/ISA365-A/Datasets/LandingPages.csv", stringsAsFactors = TRUE)
+
+head(df)
+```
+
+2. What is in the source column?  Summarize it to find out.
+
+The source column shows the counts of users who found the ad either on the internet (9,742 users) or through their email (1,821 users).
+
+```{r}
+
+table(df$source)
+
+```
+
+3. Create a summary table of the mean and standard deviation of sales for users who saw version A and those who saw version B and a count of the number of users in each group.
+
+## THIS IS ON YOUR EXAM
+
+```{r}
+
+library(tidyverse)
+df %>% group_by(source) %>% summarize("mean sales"=mean(sales), "std sales"=sd(sales),"count"= n())
+```
+
+4. Make boxplots of the sales by each version.  What can you conclude from this boxplot? What is the most common purchase amount?
+
+From the look of the boxplot, it appears that most people who clicked on the advertisement only looked at the ad, but did not spend any money. Therefore, the company had a net sale of zero for that user.
+
+```{r}
+boxplot(df$sales~df$version, xlab=("Version"), ylab=("Sales"), )
+
+```
+
+5. We need a better visualization. Use this code to create violin plots.  The top one is of the whole data. The second one is a zoom on the Y axis.
+
+```{R}
+ggplot(df,aes(x=version, y=sales))+geom_violin()+theme_bw()
+
+```
+
+```{R}
+ggplot(df,aes(x=version, y=sales))+geom_violin()+theme_bw()+coord_cartesian(ylim = c(0,25))
+
+```
+
+6. Well that is interesting, but I think we need to look specifically at the folks who donated to see what their donations look like. Use the code below to create a data frame called sub that is created by filtering out the 0's in the data.
+
+
+```{R}
+library(tidyverse) # for filter
+sub<-df %>% filter(sales>0)
+
+```
+
+7. Well let's see if there is a difference.  Find a 95% confidence interval for the difference in the landing page versions.
+
+
+```{r}
+
+t.test(df$sales~df$version, var.equal = FALSE)
+
+```
+
+8. Write up a sentence interpreting that interval as if you were sending this sentence to your manager. Do not use the word "confident" in your write up.
+
+Based on the findings from the tests ran on the data, we can see that there is no found difference between email advertisement sales versus internet sales (95% CI Diff (-1.2967238, 0.4718838)).
+
+
+9. Give two explanations as to why we do not see a difference.
+
+1) The high p-value does not give enough evidence to suggest a difference.
+2) The mean sales between the two advertisements are similar.
+
+### Another approach
+
+What if we analyzed the response did the person make a purchase or not?  Instead of the average sales, we can test the proportions.
+
+10. Create a dummy variable that indicates if a person made a purchase or not.  1=purchase, 0=no purchase.  Use the code below.
+
+```{r}
+df$purchase<-ifelse(df$sales>0, 1, 0)
+
+```
+
+11. Calculate the different proportions for each landing page.
+
+# THIS IS GOING TO BE ON THE EXAM
+```{r}
+library(tidyverse)
+# df %>% group_by(source, version) %>%  summarise(n = n()) %>%
+#   mutate(freq = n / sum(n))
+
+df %>% group_by(version, purchase) %>%  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+```
+
+12. Find a 95% confidence interval for the difference between these two proportions.
+
+```{r}
+prop.test(x=c(328, 336), n=c(5465 + 328, 5434 + 336))
+
+```
+
+13. Is your conclusion any different? Write up the conclusion as if you are presenting the results to your manager.
+
+From analyzing the proportion of the amount of sales from both email and internet advertisements, there does not seem to be any difference between the two. The two advertising methods look like they do about the same in terms of sales.
+
+
+

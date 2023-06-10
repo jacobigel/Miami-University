@@ -1,0 +1,8 @@
+1,John Smith,35535
+5,Mary Jones,75355
+3,Chen Wang,63535
+7,Manish Patel,47535
+2,Li Chyou,55000
+6,Akari Nokomoto,42750
+4,Ren Koyo,59750
+8,Hakim Mandela,67500

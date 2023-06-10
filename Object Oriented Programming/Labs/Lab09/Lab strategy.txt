@@ -1,0 +1,20 @@
+O(n)
+1- Arrays.BinarySearch O(logn)
+2- get an index from the binary search and convert it
+O(n)
+3- You create a new array with the length + 1
+4- copy everything before the index from the old 
+array into the new array
+System.arraycopy() Or yo can use a simple for loop
+
+5- You put the item at the index inside the new array
+6- copy everything else after the index  from the 
+the old array into the new array
+
+{1,2,4,5}, {2,3,5,6} O(n ^ 2)--> O(n) 
+         i        j
+	You loop as long as (i < list.length && j < list2.length)
+ 1- check the elements to see if they are equal
+ if true: count the duplicate + and move both indices
+ 2- If not, move the index belongs to the smaller value
+ 

@@ -1,0 +1,51 @@
+---
+title: "Password Experiment Results"
+output:
+  powerpoint_presentation: default
+  ioslides_presentation: default
+date: "2022-08-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+## Summary
+
+
+We implemented a new version of the landing page to implement dynamic sign-in or sign-up interaction with the email address being checked for whether it exists or not.
+
+- additional password field
+- opt out of communication check box
+- the movement of the primary call to action to a new line.  
+
+
+## Control 
+![](Netflix A email.png){width=20%}
+
+
+## Test
+![](Netflix B email.png){width=20%}
+
+## Results
+
+The analysis results show that there is only a 7% chance that the true success rate for the Test version is greater than the true success rate for the Control version.  
+
+```{r, echo=FALSE}
+df<-read.csv("I:\\Classes\\ISA 365\\Class Activities\\netflix_password.csv")
+df$sign_ups[df$sign_ups==1]<-"Yes"
+df$sign_ups[df$sign_ups==0]<-"No"
+df$version[df$version=="A"]<-"Control"
+df$version[df$version=="B"]<-"Test"
+df$sign_ups<-as.factor(df$sign_ups)
+df$sign_ups<-relevel(df$sign_ups, "Yes", "No")
+table1<-table(df$version, df$sign_ups)
+mosaicplot(table1, main="Sign Ups by Version", las = 1, color=c("red", "gray"))
+
+```
+
+
+

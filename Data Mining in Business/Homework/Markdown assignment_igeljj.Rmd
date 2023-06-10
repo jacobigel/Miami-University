@@ -1,0 +1,207 @@
+---
+title: "Markdown Assignment - Jacob Igel ISA 491A"
+output:
+
+  html_document: 
+  
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE,
+	cache = TRUE
+)
+```
+
+
+The purpose of this assignment is for you to learn a how to use R Markdown.  And get a regression refresher. You will turn in a html document and a .RMD document for credit.  For numbers 1-4, you do not have to turn anything in, these are just some things to help you practice.  Of course, there are 1000 more things you can do in Markdown then what you will cover here.  But this will get you started.
+
+### Get to Know R Markdown
+
+
+1. Read through Sections 27.1 and 27.2 of this [book](https://r4ds.had.co.nz/r-markdown.html).
+
+2. Open R studio.  Click File>New File>R Markdown... Notice you get a sample document.  This is the .RMD file where you create documents.  Do the following:
+
+a. Click the Knit button at the top.  It literally has a ball of yarn icon. You will have to save this somewhere as a test. Look at the html document it created compared with the code. Notice that in the directory where you saved the file there is now an html file created.
+
+b. Close the html file.  
+
+c. In the first block of code, click the small green run arrow (the arrow pointing to the right). You will see that the code has been executed and the output appears below.  This is a critical step when compiling a document.  If even one chunk of code has an error, then the entire document will not compile and its **really** hard to figure out where the error is coming from.  So get in the habit of running each chunk.
+
+d. Knit the document again, but this time click the down arrow next to the Knit button and choose pdf or word document.  See what happens and what it looks like.  Personally, I think the html is the cleanest format, but it is also possible to edit the word document after the fact. Also, if you have chosen to Knit to word, that option is going to stay.  Its quicker to Knit to html.  Choose that option from now on.  
+
+e. Close the word document.  Add another "#" before including plots.  Knit the document to html.  Notice the font size on the header changed.
+
+3. Notice in the html document that the code to summarize the cars data appears but the code to create the plot in the second chunk of code does not.  The `echo=FALSE` is what does that.
+
+4. Notice that if you want work in R you will have click on the Console tab in the output viewer.
+
+
+
+### Assignment
+
+Read the description of the Takyo Software data in problem 6.2 on page 169 and 170 of your text book.  You will be constructing a model to predict the spending amount that a purchasing customer will yield.  In this exercise you will only be creating the model. We will learn how to evaluate the model for prediction capability later.  Use the .RMD file of this document to create your own markdown document.
+
+
+
+1. Notice the very first chunk of code at the top has several options in it, echo, cache, warning and message.  Please use Google and report what each of those options does.
+  
+Just type your answer here.
+
+Echo - Whether or not the code will be shown in the final document
+
+Cache - While tuned on, knitr skips the execution of the code chunk it is with only if it has been previously executed.
+
+Warning - Whether or not the final document will suppress any R Warnings in the final document
+
+Message - Whether or not the final document will suppress any R Messages in the final document
+
+2. Download the data "TaykoPurchasers.csv".  Put it in the same directory as where you saved your markdown document.  Read in the data below. Assign it to an object called df.
+
+```{r}
+df <- read.csv("TaykoPurchasers.csv", stringsAsFactors = TRUE)
+
+```
+
+
+3. Create another chunk of code.  Let's get fancy.  Its always nice, if possible, to give someone a snapshot of the data.  Let's make a table that contains just the first 6 rows of the data.  Use the following code.  But use `echo=FALSE` to hide the `knitr` code. That way we just see the table.  Note, you might have to install the `kableExtra` package.
+
+
+
+```{r, echo = FALSE}
+library(kableExtra)
+knitr::kable(
+  df[1:6,],
+  caption="The Tayko Data"
+  
+)%>% kable_styling(bootstrap_options = c("striped", "hover"),
+                full_width = F,
+                font_size = 12,
+                position = "left")
+
+```
+
+4. Code the variables properly so we can summarize them.  Verify that WEB, GENDER, ADDRESS_RES, ADDRESS_US are factors. 
+
+```{r}
+df$WEB <- as.factor(df$WEB)
+df$GENDER <- as.factor(df$GENDER)
+df$ADDRESS_RES <- as.factor(df$ADDRESS_RES)
+df$ADDRESS_US <- as.factor(df$ADDRESS_US)
+```
+
+
+5. Use the `DataExplorer` package to make histograms of the quantitative variables and bar charts of the qualitative variables.  Hide the code.  Write a sentence describing each set of plots. The code is `plot_histogram` and `plot_bar`.  Remember to load the `DataExplorer` package.
+
+```{r, echo = FALSE}
+library('DataExplorer')
+plot_histogram(df)
+plot_bar(df)
+```
+ 
+1. FREQ - Heavily skewed right with some outliers falling on the very right hand side of the graph above 12. The center appears to be between 0-4 and it looks like it ranges from 0 to 15.
+
+2. LAST_UPDATE - This graphs appears somewhat normal with a possible slight skew to the right with no apparent outliers outside of the main parts of the graph. The center seems to fall around the 2000 and it ranges from 0 to 4188.
+
+3. SPENDING - Heavily skewed right with no apparent outliers. The center appears to be between 0-500 and it looks like it ranges from 0 to 1500.
+
+4. WEB - It appears that more consumers purchased by web then those who have not.
+
+5. GENDER - It appears that the gender of the customers is about even with Gender1 having slightly more.
+
+6. ADDRESS_REG - It appears that more customers have residential addresses then those who do not.
+
+7. ADDRESS_US - It appears that more customers have US addresses then those who live outside of the US.
+
+
+
+6. Check for missing data.  Use `introduce` from the `DataExplorer` package.  Bonus, make this a nice looking table using `knitr`. Hide the code. Comment on the sample size and if there is any missing data.
+
+From what I can tell by the introduce function, there is no missing data in our sample size of 1000 observations.
+
+
+```{r, echo = FALSE}
+library('DataExplorer')
+introduce(df)
+```
+
+
+
+
+
+7. Create a regression model using $y$=SPENDING and all of the possible predictors.  Show your code and a summary of the model.  Recall, you will use `lm`.
+
+```{r}
+reg <- lm(SPENDING ~ .,data = df)
+summary(reg)
+```
+
+8. Comment on which variables seem to be important for predicting customer spending as well as the overall usefulness of the model. By the way, if you want to make a \% sign, you have to put a backslash, `\`, in front of the symbol.  Please do not use the variable names in the text you write, but use the actual descriptions.  For example, instead of saying ADDRESS_US say if the customer is from the United States or not.  This does not require any code.
+
+Just type your answer here.
+
+1) The frequency of transactions from the customer from the prior year.
+
+2) The number of days since the customer made an update to their record.
+
+3) Whether or not the customer has a residential address.
+
+
+
+
+9. Write a few sentences interpreting the important coefficients in the model.  Again, do not use the variable names but the description.  These sentences should make sense to anyone regardless of if they understand regression modeling or not. This does not require any code.
+
+Just type your answer here.
+
+1) As the consumers spending increases by $1.00, the frequency of transactions in the prior year increases by 88.025 on average.
+
+2) As the consumers spending increases by $1.00, the amount of days since the customer last updated their record decreases by -0.019 on average.
+
+3) If a consumer has a residential address then their spending increases by $9.17 (93.78 - 84.61) on average.
+
+
+
+10. Give a description of the ideal customer in terms of spending. This does not require any code.
+
+Just type your answer here.
+
+The ideal customer in this instance would be one that has frequent transactions with their account, one who regularly updates their information to ensure its correct, and one who lives in a residential area.
+
+
+
+11. Verify the model assumptions using plots.  Here is the code to get the plots.  You can write to describe what assumptions the plots are checking and if those assumptions are met or not.  `reg` in the code below is the `lm()` object you created in number 7.
+
+The mean of the probability distribution of residuals is 0.
+- For the most part we can tell that this assumption is met, especially when looking at the QQ plot.
+
+The variance of the probability distribution of residuals is constant for all settings of x.
+-  When looking at the graphs, it appears that all of them follow the same trend of having a lot of connection points on the left hand side and then falling off of that path on the right hand side.
+
+The probability distribution of the residuals is normal.
+- While looking at the QQ plot, we can see that most of the residuals fall on the line while they become more skewed on the right hand side of the graph.
+
+The errors associated with any two different observations are independent.
+- We can assume this since there is nothing in the data to tell me otherwise.
+
+```{r}
+par( mfrow = c(2,2) )
+plot(reg, which=5)
+plot(reg, which=1)
+plot(reg, which=2)
+plot(residuals(reg) ~., main="Residuals vs X", font.main=1,data=df)
+abline(h = 0, lty = 2)
+
+```
+
+
+12. Run spell check on before turning it in on Canvas.  There is a button at the top by the save sign.
+
+
+
+
+

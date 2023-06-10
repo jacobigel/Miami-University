@@ -1,0 +1,76 @@
+---
+title: "Lady Tasting Tea - Jacob Igel & Samuel Vaughan"
+date:  "Last complied on `r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+Read Page 103 in your test about the Lady tasting tea.  Work with your partner to answer the questions below.  You only need to turn in one assignment per group.  Answer the questions directly on this document, knit it and then turn it in as an html file.
+
+1. How many cups should be used? (to ensure statistical validity)
+* n >= 30 cups
+* At least 10 
+
+2. Once the number of cups has been determined, how many of each type? An equal number? An unequal number?  Does it matter?
+* 50/50 split
+* It does matter since it would be more biased if there was one more than the other.
+
+3. How many cups can she test before her taste buds fail?
+* If shes drinking the entire cup of tea, we think the most that she could handle before not being able to tell a difference would be six cups of tea, three of each.
+
+
+4. Should the cups be paired? (present two at a time, one with milk added to tea and the other tea added to milk)
+* We think that she should just drink one at a time to eliminate any sort of natural bias that she has while drinking. If she had two, she could have a bias of what she just drank and base that bias on the next cup of tea she drinks.
+
+
+5. How should chance variation (random error) in temperature or strength of tea be handled?
+* Strength: Make sure all of tea is prepared the same way every time from the same batch of ingredients, same cup, same milk, etc.
+* Temperature: boil water at same temperature every time and use a hot plate to ensure the cups are remaining at the same temperature.
+
+
+6. How much should the lady be told about the order of presentation?  If it is paired, should be told that they are paired?
+* We think that she should be given a random cup of tea with no idea about the order of presentation.
+
+
+7. In what order should the types of tea be presented?  First all of one type and then all of the other?  Alternated, first cup of one type, then a cup of the other type, and then back to the first type?  Or should some other arrangement be useful?
+* Assign every cup of tea a different number and then randomly choose one cup every time that she needs to drink another one. Alternating or having some type of pattern could lead to a predictable bias of what the next cup will taste like.
+
+
+8. What type of tea should be used?  Should the same type of tea be used for every cup?  Maybe different teas should be tested.
+* She should be drinking the same tea every time to reduce the amount of variation that she is experiencing throughout the experiment.
+
+
+9. Let's create a randomized order for our tea experiment.  Create the order in which your treatments will appear.   The code below should be helpful as well as the notes on randomization. 
+
+Call the treatment "Milk" and the levels will be "first" or "last".
+
+The `rep` function might be useful.  Here is an example.
+
+
+```{r}
+
+first<-rep("first", 15)
+first
+last<-rep("last",15)
+last
+Milk<-c(first, last)
+Milk
+
+set.seed(13)
+index<-sample(1:length(Milk), size=30) 
+index
+selected <- Milk[index]
+
+index<-sample(1:length(Milk), size=.5*length(Milk))
+index
+first <- Milk[index]
+first
+last <- Milk[-index]
+last
+```

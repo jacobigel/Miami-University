@@ -1,0 +1,246 @@
+---
+title: "ISA 491 Homework 2 - Jacob Igel ISA 491 A"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+
+Copied from [here](https://en.wikipedia.org/wiki/LendingClub):
+
+"[LendingClub](https://www.lendingclub.com/) is an American peer-to-peer lending company, headquartered in San Francisco, California. It was the first peer-to-peer lender to register its offerings as securities with the Securities and Exchange Commission (SEC), and to offer loan trading on a secondary market. LendingClub is the world's largest peer-to-peer lending platform.The company claims that $15.98 billion in loans had been originated through its platform up to December 31, 2015.
+
+LendingClub enables borrowers to create unsecured personal loans between \$1,000 and \$40,000. The standard loan period is three years. Investors can search and browse the loan listings on LendingClub website and select loans that they want to invest in based on the information supplied about the borrower, amount of loan, loan grade, and loan purpose. Investors make money from interest. LendingClub makes money by charging borrowers an origination fee and investors a service fee.''
+
+In this homework we will being the data mining process by cleaning real LC data from loans issued in 2017.  Our goal is to be able to predict which loans are likely to default in the first 12 months resulting in a loss of revenue. We want to be able to predict if a loan will default or be charged off in the first 12 months at the time of the loan application.  Therefore, I have done my best to give you just the variables that someone will have only at the time of application and have removed all information gathered after that point in time.  I have somewhat prepared a data set for you, in this homework and  perhaps the next you will continue that process.  See the excel data dictionary posted with the data file for complete information about what is contained in the data.
+
+```{r, echo=TRUE}
+pacman::p_load(DataExplorer, tidyverse)
+```
+
+
+1. Read in the lending club data titled "lc_loans_2017.csv''.  Use `stringsAsFactors=TRUE` in your `read.csv()` statement.  What proportion of people in the data "charged off" before 12 months?  Hint, first make sure the binary Target variable is coded correctly. 
+
+1 = charged off
+
+1527 people charged off from a total of 24665 or 6.190959% ((1527/24665)*100)
+
+```{r, echo=TRUE}
+df <-read.csv("lc_loans_2017.csv", stringsAsFactors = TRUE)
+df$Target <- as.factor(df$Target)
+summary(df$Target)
+```
+
+
+2. Use the `data summary.R` function I provided to run a summary of the data, show the output below. Comment on anything odd.
+
+There are 30 missing values from dti and 773 missing values in mo_sin_old_il_acct.
+
+```{r, echo=TRUE}
+source("/Users/jacobigel/Desktop/School/ISA 491/data summary.R")
+data.summary(df)
+```
+
+
+3. Use the `DataExplorer`package to explore missing data in the data set.  Show the plot below.  Which variables should be removed based on missingness?  Remove those columns from the data and show the `dim()` of the data. (Hint: there are two).
+
+```{R, echo=TRUE}
+plot_missing(df)
+df <- select(df, -member_id, -desc)
+```
+
+
+```{r, echo=TRUE}
+head(df)
+dim(df)
+```
+
+4.Use the `DataExplorer`package to explore  the qualitative variables.  Show the plot below.  
+
+
+```{r, echo=TRUE}
+plot_bar(df)
+plot_bar(df$disbursement_method)
+plot_bar(df$issue_year)
+plot_bar(df$policy_code)
+```
+
+4a. Based on the plot you created for the qualitative variables, are there variables that need to be removed because they have one level, which ones? Are there variables that don't make sense to include in a model?  Remove them and show the `dim()` of the data.  State why you removed each variable.  Ignore the dates (issue_d) when you are answering this question, we will deal with them later. Hint: I found 3 variables that should be removed.
+
+```{R, echo=TRUE}
+df <- select(df, -disbursement_method, -issue_year, -policy_code)
+dim(df)
+```
+
+
+4b. Based on the analysis you on the qualitative variables, are there variables that need to be collapsed (reduce the number of categories), which ones?  You do not have to collapse the variables or remove them, just state what you would do and why.ah
+
+
+For the variables addr_state and sub_grade, I would try and find a way to 
+decrease/condense the amount of categories so that it can be easier to not only 
+look at, but to also understand. At this current point in time, I am not too sure
+how to exactly condense variables like this with R - maybe merging some of the similar
+categories together could help with this problem.
+
+
+
+5. Use the `DataExplorer`package to explore the quantitative variables.  Show the plot below. 
+
+```{r, echo=TRUE}
+
+plot_histogram(df)
+
+```
+
+
+5a. Describe any variables that have strange or unexpected distributions.
+
+The annual income (annual_inc) variable has an extreme rightward skew. This could be an issue with the amount of breaks or with the data itself. This also appears with DTI, 
+the recent accounts opened (mo_sin_rcnt_tl), the public records (pub_rec), and the 
+total collection amounts (tot_coll_amt). All of these have an extreme rightward skew with a lot
+of white space on the right side of the graph.
+
+The ID varible suffers from the opposite of annual income, DTI, etc. since this variable has an extreme leftward skew with a lot of white space on the lefthand side of the graph.
+
+The X variable has an odd multimodal skew to it and really makes itself stick out in the serval histograms shown. 
+
+5b. Based on the quantitative analysis, are there variables that seem to be coded incorrectly?  If so fix them. Ignore the dates. (Hint: I found 1). 
+
+```{r, echo=TRUE}
+head(df$pub_rec, 30)
+df$pub_rec <- as.factor(df$pub_rec)
+
+```
+
+5c. Based on the quantitative analysis, are there any other variables that need to be removed?  Do not remove any dates. (Hint: sometimes it helps to change variables to a factor or use `length(unique())` to count the number of unique values.  The number of unique values should not be equal to the number of rows, otherwise the there is a unique value for each row.)
+
+```{r, echo=TRUE}
+dim(df)
+
+length(unique(df$X))
+length(unique(df$id))
+
+df <- select(df, -id, -X)
+
+```
+
+
+6. Let's deal with some other issues. Employment title (emp_title) is provided by the borrower in a text box, so not a list of pre-specified choices.  Hopefully you already saw that it has a lot of different levels.  Look at the top 20 below.
+
+```{r, echo=TRUE}
+
+head(df$emp_title, 20)
+
+```
+
+
+I already see "Registered Nurse" and "Nurse".  Certainly we can go through and attempt to categorize employment categories, but that seems like it would take a really long time.  Let's extract some other information that might be predictive.  First, let's extract the length of the employment title, the number of characters.  But we first have to change this variable back to a character.
+
+```{r, echo=TRUE}
+df$emp_title<-as.character(df$emp_title)
+```
+
+`nchar` gives the number of character values in the title.
+
+```{r, echo=TRUE}
+df$emp_title_length<-nchar(df$emp_title)
+
+```
+
+Provide a summary and a histogram of the length of the employment title. Do you notice anything?
+
+Something that I notice right off the bat is that some titles have a length of 0 which does
+not make a lot of sense. This might mean that some of the data is missing for the titles.
+```{r, echo=TRUE}
+summary(df$emp_title_length)
+plot_histogram(df$emp_title_length)
+```
+
+
+7. I also wonder if the fact someone used capital letters at the beginning of their employment title matters? Create a variable that indicates if a borrower's employment title was capitalized.  Use this code and add that variable to your data set.  Then create a dummy variable where "1" indicates the title was listed with a lower case value and "0" otherwise.  
+
+```{r}
+library(stringi)
+cap<-stri_locate_first_regex(df$emp_title, "[A-Z]")[,1]
+head(cap)
+df$emp_title_cap<-as.factor(ifelse((is.na(cap)==TRUE), 1, 0))
+```
+What proportion of people did not use a capital letter for their title? 
+
+3931 used a lowercase title from a total of 24665 or 15.93756% of people.
+
+```{r, echo=TRUE}
+summary(df$emp_title_cap)
+```
+
+8. What should be done with the original variable emp_title?  Do that below.
+
+```{r, echo=TRUE}
+df <- select(df, -emp_title)
+```
+
+9. Earliest credit line is a date.  We can't include a date in a model.  Let's find the difference between the issue date (issue_d) and the earliest credit line (earliest_cr_line).  We will use the package `lubridate`.  It is important that your dates are coded as `chr` and not `factors`.  Provide a summary of the credit length in the data (summary means a graph and some summary statistics).
+
+```{r}
+df$issue_d<-as.character(df$issue_d)
+df$earliest_cr_line<-as.character(df$earliest_cr_line)
+
+summary(df$issue_d)
+summary(df$earliest_cr_line)
+
+plot_bar(df$issue_d)
+#plot_histogram(df$earliest_cr_line)
+```
+
+```{r}
+library(lubridate)
+df$earliest_cr_line<-parse_date_time(df$earliest_cr_line, orders=c("my"))
+df$earliest_cr_line<-ymd(df$earliest_cr_line)
+```
+
+When I created your data set, I already used `parse_date_time` for issue_d, so that is why that is missing below.
+
+```{r}
+df$issue_d<-ymd(df$issue_d)
+x<-interval(ymd(df$earliest_cr_line), ymd(df$issue_d))
+x<-x %/% months(1)
+df$credit_length<-x
+```
+
+Provide a summary of the credit length variable (graphical and numerical) Anything seem odd to you about the credit length? Comment on that variable.
+
+```{r, echo=TRUE}
+summary(df$credit_length)
+
+plot_histogram(df$credit_length)
+```
+
+10. What should be done with the columns issue_d and earliest_cr_line?  Do that below.
+
+```{r, echo=TRUE}
+df <- select(df, -issue_d, -earliest_cr_line)
+```
+
+11. Create dummy variables for the factors with more than 2 levels and less than 15 levels.  Use the `fastDummies` package.  Drop the first column of each.  Add those dummy variables to your data frame and remove the original variables.  Show the final `dim()` below. I ended up with 24665 rows and 79 columns.
+
+```{r, echo=TRUE}
+library(fastDummies)
+df<-dummy_columns(df, select_columns = c("emp_length","grade"
+                                         ,"home_ownership", "purpose", "title",
+                                         "issue_month", "verification_status"), 
+                  remove_first_dummy = TRUE,
+                  remove_selected_columns = TRUE)
+
+dim(df)
+```
+12. Lastly, save your data frame as an .RDS object to use to in Homework 2.  I called mine `lendinglclub.RDS`.
+
+```{r, echo=TRUE}
+
+saveRDS(df, "lendinglclub.RDS")
+
+```

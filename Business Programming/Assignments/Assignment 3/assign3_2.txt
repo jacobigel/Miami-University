@@ -1,0 +1,3 @@
+Content of assign3_2.txt
+The word flour was found at positions [20, 67] in the given string
+The extracted text is: , mixed with three pounds of self raising 

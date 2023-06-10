@@ -1,0 +1,55 @@
+Drug	Subj	Gender	SBP	DBP
+Placebo	1	M	138	86
+Placebo	2	F	124	82
+Placebo	3	M	150	72
+Placebo	6	F	132	84
+Placebo	7	M	130	84
+Placebo	8	F	146	88
+Placebo	9	M	134	82
+Placebo	10	F	138	88
+Placebo	11	M	144	84
+Placebo	12	F	130	88
+Placebo	13	M	134	80
+Placebo	14	F	132	90
+Placebo	16	F	124	88
+Placebo	17	M	140	78
+Placebo	19	M	120	80
+Placebo	20	F	142	90
+Drug A	21	M	126	76
+Drug A	22	F	134	86
+Drug A	23	M	118	78
+Drug A	24	F	132	80
+Drug A	26	F	124	78
+Drug A	27	M	140	86
+Drug A	28	F	130	80
+Drug A	29	M	136	84
+Drug A	30	F	120	74
+Drug A	31	M	122	82
+Drug A	32	F	140	78
+Drug A	33	M	142	92
+Drug A	34	F	134	82
+Drug A	35	M	134	78
+Drug A	36	F	120	90
+Drug A	37	M	130	84
+Drug A	38	F	136	74
+Drug A	39	M	138	78
+Drug A	40	F	118	80
+Drug B	41	M	120	88
+Drug B	42	F	126	82
+Drug B	43	M	120	82
+Drug B	44	F	148	84
+Drug B	45	M	118	70
+Drug B	46	F	138	72
+Drug B	47	M	112	68
+Drug B	48	F	112	80
+Drug B	49	M	124	84
+Drug B	50	F	114	70
+Drug B	51	M	114	80
+Drug B	52	F	134	82
+Drug B	53	M	128	84
+Drug B	54	F	144	76
+Drug B	56	F	108	82
+Drug B	57	M	140	82
+Drug B	58	F	136	74
+Drug B	59	M	140	82
+Drug B	60	F	110	78

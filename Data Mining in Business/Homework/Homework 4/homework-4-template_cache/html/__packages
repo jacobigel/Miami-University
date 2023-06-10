@@ -1,0 +1,15 @@
+base
+DataExplorer
+lattice
+ggplot2
+caret
+tidyverse
+tibble
+tidyr
+readr
+purrr
+dplyr
+stringr
+forcats
+pROC
+ROCR

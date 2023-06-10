@@ -1,0 +1,210 @@
+---
+title: "Homework 2 - Jacob Igel"
+date:  "Last complied on `r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+# NOW WITH CORRECTIONS
+
+1. A firm wishes to compare two banner ads.  Banner A has 7,642 impressions and 85 clickthoughs.  Banner B has 11,212 impressions and 122 click throughs.  What are the click through rates for each ad?
+
+CTR = clicks/impressions * 100
+```{r}
+
+ad1 = (85/7642) * 100
+  
+ad2 = (122/11212) * 100
+
+
+ad1
+ad2
+
+```
+
+
+2. Continuing from 1: Is this difference statistically significant?  Show the appropriate analysis using a corrected test of proportions (not the Wald test) and write your conclusions so anyone can understand the difference. 
+
+```{r}
+prop.test(x=c(85,122), n=c(7642,11212))
+
+```
+- The two versions of advertisements to customers and the proportions of people who responded is not significantly different between the two versions (95% CI Diff -0.002, 0.003).
+
+# Class Corrections
+
+__There is no significant difference in click rate between the two banner ads (95% CI Diff -0.002, 0.003).__
+
+3. Suppose we wish to detect a difference of \$0.094 (just under a dime) between two different online ads.  Suppose the standard deviation of the response (sales) is \$103.77 (the standard deviation will be large because most clicks do not produce sales so there are lots of 0's in the data).  For an A/B test how many observations do we need in each sample?  Use a power of 0.8 and $\alpha=0.05$.
+
+```{r}
+
+power.t.test(n=NULL, delta=.094, sd=103.77, sig.level = 0.05, power = .8)
+
+```
+- For an appropriate A/B test, we would need 19,130,469 in each sample.
+
+4. An A/B test results in 18 successes in 223 trials for version A and 26 successes in 287 trials for version B.  What is the probability that the true proportion of version A is larger than the true proportion for version B. i.e. $P(p_a>p_b$)? Hint: Use the Beta-Binomial Model.
+
+```{R}
+# prop.test(x=c(18, 26), n=c(223, 287))
+
+```
+
+```{r}
+# x<-seq(0,1,0.01)
+# a=18+1
+# b=223+1
+# Afx<-dbeta(x, a, b)
+# a1=26+1
+# b1=287+1
+# Bfx<-dbeta(x, a1, b1)
+# plot(x, Afx, type="l") 
+# lines(x, Bfx, col="red")
+```
+# Class Corrections
+```{r}
+iter=100000
+# Need to add the plus one because of math
+a=18+1
+b=205+1 # 223 - 18
+a1=26+1
+b1=261+1 # 287 - 26
+count<-c()
+for (i in 1:iter){
+A<-rbeta(1, a, b)
+B<-rbeta(1, a1, b1)
+count[i]<-ifelse(A>B, 1, 0)
+
+
+}
+pdiff<-sum(count)/iter
+pdiff
+```
+- This indicates that there is about a 36% chance that the true success rate for A is greater than the true success rate for B. Even though B is doing better based on the 510 trials, there is still a 36% that A performs better than B in the long run.
+
+5. [Booking.com](https://www.booking.com/) ran a test in July of 2019 to evaluate the addition of logos next to its booking options (see below):
+
+The company ran the experiment for two weeks and among the various response was the average spend for each user.  Describe the treatment and response for this experiment. 
+
+- Treatment: Different Logos
+- Response: Average Spend
+
+6. Read in the data from "booking.csv".  What is the average spend and standard deviation of spend for each version?  I find it best to use the `stringsAsFactors=TRUE` argument in my `read.csv()` statement here.
+
+```{r}
+df <-
+  read.csv("/Users/jacobigel/Desktop/School/ISA365-A/Datasets/booking.csv", stringsAsFactors = TRUE)
+
+head(df)
+
+library(tidyverse)
+df %>% group_by(variant) %>% summarize("mean spend"=mean(user_spend), "std spend"=sd(user_spend),"count"= n())
+
+```
+
+7. Visualize the data by each variant.  Use any graph you feel shows the distribution of spend the best.  Comment on your findings.  
+
+
+```{r}
+library(tidyverse)
+dff <- filter(df, user_spend >0)
+# boxplot(df$user_spend~df$variant, xlab=("Varient"), ylab=("User Spend"), )
+boxplot(user_spend~variant, xlab=("Varient"), ylab=("User Spend"), data = dff )
+```
+
+
+- While the majority of people did not spend anything for A or B, we can see the spread of B is more densely packed and has higher spending on average.
+
+8. Find a 95% confidence interval for the difference in average spend for each variant.  Use Welch's test.
+
+```{r}
+t.test(df$user_spend~df$variant, var.equal = FALSE)
+```
+
+
+9. Write a sentence giving a conclusion to your analysis based on the interval you found above.
+
+- We can conclude that Group B produce more average user spend (95% CI Diff (-5.5778297 -0.2482742)); we also know that B user spend is higher than A since the mean is higher.
+
+# Class Corrections
+__The addition of the logos to the banner made a significant improvement in the user spend (95% CI Diff: (\$0.25, \$5.58)).__
+
+10. Google is a leader in A/B testing.  In October of 2019 they tested the list vs. the grid layout for search results (see below):
+
+Their response was the number of clicks. They ran this test in a specific market for 4 days. What is the treatment and was the response of interest for this test?
+
+- Treatment: The layout
+
+- Response: Clicks
+
+11. Read in the file "google_layout.csv". And give a summary of the click through percentage by variant.  I recommend using code for the `pivot_longer()` function from the Analyzing AB Tests Sample Means notes and the `group_by()` and `summarize()` functions.  `everything()` is an argument that says we want to use all the columns in the data frame. 
+
+```{R }
+
+df2 <- read.csv("/Users/jacobigel/Desktop/School/ISA365-A/Datasets/google_layout.csv", stringsAsFactors = TRUE)
+
+head(df2)
+
+```
+```{r}
+# 
+# df2_long <- pivot_longer(
+#   df2,
+#   everything(),
+#   names_to="variant",
+#   values_to="clicks"
+#   ) %>%
+#   group_by(Layout) %>%
+#   summarize(Clicks) 
+
+# head(df2_long)
+
+
+
+df2_long <- df2 %>% pivot_longer(
+  cols = everything(),
+  names_to="variant",
+  values_to="clicks"
+)
+
+head(df2_long)
+
+df2_long %>% group_by(variant, clicks) %>%  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+```
+
+
+12. Find a 95% confidence interval for the difference between each variant.  Be sure to use the correction.
+# Class Corrections - KNOW DIFFERENCE BETWEEN PROP AND T TEST
+```{R}
+# t.test(df2_long$Clicks ~ df2_long$Layout, var.equal = FALSE)
+
+prop.test(x=c(620,699), n=c(19380+620, 19301+699))
+
+```
+
+13. Give a sentence explaining that interval so that anyone can understand what the test results are showing.  Give another sentence explaining your recommendation to Google.  
+
+- We can conclude that Tile Layout produce more average clicks (95% CI Diff ( -0.007, -0.0004)) than a list layout. I recommend that you use the tile layout rather than the list layout.
+
+__The tile layout has an improved click rate compared to the list layout (95% CI Diff: 0.04%, 0.7%)__
+
+14. For the Google layout with the highest clicks provide the percentage of clicks expected with a 95% confidence interval for that layout.  Report those numbers in a sentence.
+# Class Corrections
+```{r}
+
+table(df2_long)
+prop.test(x=699, n=20000, correct = FALSE)
+```
+# Class Corrections
+- Based on our findings, we can see that based on 19301 impressions, the click rate was anywhere between 3.3% and 3.9% when using the tile layout.
+
+__We would expect a click rate of between 3.2% and 3.8% if the tile layout was implemented (95% CI).__
+

@@ -1,0 +1,279 @@
+---
+title: "Homework 4 Jacob Igel ISA 491 A"
+ 
+output: 
+  html_document:
+    
+    toc: true
+    toc_float: true
+  
+  
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+```{r}
+pacman::p_load(DataExplorer, caret, tidyverse)
+
+```
+
+## Lending Club Data Prep
+
+We will continue cleaning the lending club data, see homework 2 for a description.  Start with the file "lending.club.data.clean.RDS" that was cleaned in homework 3
+
+```{r}
+df <- readRDS("/Users/jacobigel/Desktop/School/ISA 491/Homework/Homework 4/lending.club.data.clean.RDS")
+
+```
+
+## Number 1
+
+1. Recode the target variable to "0"="No", "1"="Yes".  If you put them in that order in the `rcode_factor()` statement then you will not have to `relevel()`.  verify that "No" is the base with `levels()`.
+
+```{r}
+df$Target <- recode_factor(df$Target, "0"="No", "1"="Yes")
+levels(df$Target)
+
+
+```
+
+## Oversampling and Partitioning
+
+### Number 2
+
+2. The Target is charged off with in 12 months (1) or not (0). First we will create a validation data set with the same proportions as the original data.  We will be sure to remove those rows from the original data. Why? Use the code below and to create a validation data set and verify the proportion of the Target in the validation data is close to the original proportions.
+
+We want to create a separate scenario from the original data set so that we can test the effectiveness of the validation to the original.
+
+```{r}
+prop.table(table(df$Target))
+```
+
+
+```{r}
+set.seed(13)
+library(caret)
+trainIndex<-createDataPartition(df$Target, p=0.3, list=FALSE, times=1)
+valid<-df[trainIndex,]
+df<-df[-trainIndex,] #subset on all of the rows that are not in the validation data
+
+prop.table(table(valid$Target))
+```
+
+### Number 3
+
+3. Next we will create an oversampled training set. We will spit the data by the Target variable then take all of the "1's" and append them to a random sample of "0's". Show the `dim()` of the training set as well as the proportions of the Target.  Show the proportion of the Target variable in the final training data that you create.
+
+```{r}
+set.seed(13)
+df.split<-split(df, df$Target)
+df.no<-df.split[[1]]
+dim(df.no)
+head(df.no$Target)
+summary(df.no$Target)
+
+df.yes<-df.split[[2]]
+dim(df.yes)
+head(df.yes$Target)
+summary(df.yes$Target)
+
+table(df$Target)
+prop.table(table(df$Target))
+```
+
+
+```{r}
+set.seed(13)
+index<-sample(1:nrow(df.no), size=2*nrow(df.yes), replace=FALSE)
+training<-rbind(df.yes, df.no[index,])
+
+table(training$Target)
+prop.table(table(training$Target))
+dim(training)
+```
+
+### Number 4
+
+4. Explain in your own words what was just accomplished in questions 2 and 3 and why it is important.
+
+The purpose of oversampling and partitioning is to evaluate how the model is going to perform in a "real" data set so we have to create the validation to compare it against the over-represented sample. Figuring out how a model would do in a real-life scenario is crucial to seeing how well you actually constructed a model with the data you have.
+
+
+
+Oversampling is important because we are interested in learning more about the ones and by having a ton of zeros could defeat that. 
+
+
+## Module 5 Pracitce
+
+### Number 5
+
+5. The file "eBayAuctions.csv" contains information on 1972 actions. The binary response, __Competitive__ is 0 if the auction was not competitive and 1 if the auction was. Two models were constructed and their predicted probabilities saved in Model 1 Prob and Model 2 Prob.  The data partition, training or validation, is indicated in the Partition column.
+
+a. Read in the data.  Be sure that everything is coded as either a factor or int/num correctly. Show the `str()` output below after you have coded everything correctly. 
+```{r}
+ebay <- read.csv("/Users/jacobigel/Desktop/School/ISA 491/Homework/Homework 4/eBayAuctions.csv", stringsAsFactors = T)
+
+ebay$Competitive <- as.factor(ebay$Competitive)
+str(ebay)
+```
+
+b. What proportion of auctions are competitive?
+
+0.540568
+
+```{r}
+table(ebay$Competitive)
+prop.table(table(ebay$Competitive))
+```
+
+c. Use the code below to split the data into training and validation.  I realize this is different than what you did on your last homework, but I'm trying to show you some different things.  Show the `dim()` of each of the training and validation subset.
+
+```{R}
+training<-subset(ebay, Partition=="Training")
+validation<-subset(ebay, Partition=="Validation")
+```
+
+```{r}
+dim(training)
+dim(validation)
+```
+
+d. Construct the ROC curves for both models for the validation data.  Paste each curve below. _Hint: You will have to use the pROC package and see the chapter 5 notes for the code._  Which model appears to be better?
+
+It appears that Model 1 is better since it has more Area Under the Curve then Model 2.
+
+```{r}
+library(pROC)
+r<-roc(validation$Competitive, validation$Model.1.Prob)
+r2<-roc(validation$Competitive, validation$Model.2.Prob)
+library(ggplot2)
+roc<-list(r, r2)
+p<-ggroc(roc)+theme_bw()+scale_colour_discrete("Model")
+p
+```
+
+e. Report the AUC for each of the models in the validation data.  Comment on which model is performing better.  
+
+Model one (r) is performing better. 
+
+```{r}
+r$auc
+r2$auc
+
+```
+
+f. Interpret what the auc means for the best model in terms of the problem.
+
+*** CORRECT ANSWER ***
+Model 1 will rank a randomly selected competitive option higher than randomly selected non-competitive option with a probability of .8513.
+
+Model 1 (r) has the best AUC which means, in this instance, it's the best model. With a AUC of .85, this means that this model has a 85% chance that it will be able to distinguish between actual positive values and actual negative values. In terms of this specific example, its the model 1 predictions compared to the actual values of competitive auctions on eBay.
+
+g. For the best performing model, find the cutoff value that will best separate the competitive and non competitive auctions.
+
+Maximizing the specificity and the sensitivity
+
+```{r}
+names(r)
+df1 <- data.frame(r$sensitivities, r$specificities, r$thresholds)
+subset(df1, df1$r.sensitivities==1 )
+
+coords(r, "best", ret = "threshold", transpose = FALSE)
+coords(r, "best", best.method="youden")
+```
+
+h. Explain what the value in you found in part g means in terms of the problem.  Explain as if you are telling someone how to use it in practice.  Describe how this number is found.
+
+*** CORRECT ANSWER ***
+When a new observation is assigned a predicted probability from our model, if the predicted probability is 0.4171196 or higher, we will call it a competitive option
+
+
+
+When it comes to the threshold, it is basically the cutoff value that will give us the maximum specificity and sensitivity values. This value is the one that results with the least amount of error.  
+
+i. If we applied a threshold of 0.8, what is the proportion of truly competitive auctions that will be identified as competitive?
+
+0.4296435
+
+As we move threshold up, sensitivity will go down and specificity will go up
+
+sensitivity - true proportion of ones called ones
+
+```{r}
+coords(r, x = .8, input = "threshold")
+```
+
+### Number 6
+
+6. Create a lift chart (gain chart) for each model for the validation data.  Comment on which model appears to be better in terms of lift.
+
+I would have to say that model 1 is better when it comes to lift since we can see that the model generally has a higher lift than model 2 - higher lift is better.
+
+```{r}
+library(ROCR)
+pred<-prediction(validation$Model.1.Prob, validation$Competitive)
+lift<-performance(pred, "lift", "rpp")
+plot(lift, main="Lift chart", col=2)
+legend(0.6, 1.8, legend=c("Model 1"),
+       col=c("red"), lty=1, cex=0.8)
+
+pred1<-prediction(validation$Model.2.Prob, validation$Competitive)
+lift1<-performance(pred1, "lift", "rpp")
+plot(lift1, main="Lift chart", col=2)
+legend(0.6, 1.8, legend=c("Model 2"),
+       col=c("red"), lty=1, cex=0.8)
+
+plot(lift, main="Lift chart", col=2)
+plot(lift1, add=T)
+legend(0.8, 1.8, legend=c("Model 1", "Model 2"),
+       col=c("red", "black"), lty=1, cex=0.8)
+```
+
+a. Below are the results from model 1. For the second row in the table below, calculate the numerator of the lift.
+
+```{r}
+df2<-data.frame(tp=unlist(pred@tp)[1:20], pos.pred=unlist(pred@n.pos.pred)[1:20], cuts=unlist(pred@cutoffs)[1:20])
+head(df2, 10)
+
+```
+positive predictions = counts
+```{r}
+36/37
+```
+
+b. Report the total number of 1's and the proportion of 1's in the Competitive variable for the validation data.
+
+553
+0.5438776
+
+```{r}
+table(validation$Competitive)
+
+# can also use:
+# summary(validation$Competitive)
+
+prop.table(table(validation$Competitive))
+```
+
+c. Calculate the lift using results from a and b.
+
+```{r}
+(36/37)/0.5438776
+
+```
+
+d. Interpret the lift you calculated in part c in terms of the problem.
+
+*** CORRECT ANSWER ***
+If I was to take a sample of size 37 using this model, I would be 1.79 times as likely to identify a truly competitive auction when compared to a random sample
+
+
+In this problem, lift is described by the proportion of actual 1's in the sample for competition divided by the overall proportion of actual 1's for competition. 
+
+

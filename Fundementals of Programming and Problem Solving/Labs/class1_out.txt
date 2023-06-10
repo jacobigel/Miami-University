@@ -1,0 +1,25 @@
+B
+A
+A
+C
+A
+D
+B
+A
+F
+B
+F
+B
+B
+F
+A
+D
+F
+C
+D
+F
+D
+A
+A
+Number of students: 23
+Class Average: 69.09

@@ -1,0 +1,105 @@
+---
+title: "Application Loading Times"
+author: "Jacob Igel & Samuel Vaughan"
+date:  "Last complied on `r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+The IT Department at a large corporation is concerned about the time it takes to load an application across the network.  The would like to implement an $\bar{X}$ and $R$ chart so that this time can be monitored and improvements can be made to this loading time.  Over the past 25 days, they have randomly selected five application loading and monitored the time from start to completion.  The data is contained in the file "loading times.csv".
+
+1. Read in the data.
+
+```{r}
+
+df <- read.csv("/Users/jacobigel/Desktop/School/ISA365-A/Datasets/loading times.csv",stringsAsFactors = TRUE)
+
+head(df)
+
+```
+
+2. Construct the R chart and assess if the within day variation is stable.
+
+```{r}
+
+library(qcc)
+library(tidyverse)
+
+qcc(df, type="R") 
+
+
+
+```
+* Within day variation looks stable!
+
+
+3. Construct the Xbar chart and assess if the between day variation is stable.
+
+```{r}
+
+qcc(df, type="xbar") 
+
+```
+* Between day variation looks stable!
+
+
+4. If both charts show no violations make an estimate of the average application loading time.
+
+```{r}
+
+mean(rowMeans(df))
+
+
+
+```
+* Note: if both charts are not in control, you should not feel comfortable making this estimate
+
+5. The IT department has made some changes that they hope to lower the loading times.  They wish to continue to monitor the loading times after these changes.  Read in the data "new loading times.csv" and call it something different from the original data. 
+
+```{R}
+
+df.new <- read.csv("/Users/jacobigel/Desktop/School/ISA365-A/Datasets/new loading times.csv",stringsAsFactors = TRUE)
+
+head(df.new)
+
+```
+
+6. Make a chart to assess the changes in the within (R) day variabilty. Add the `newdata=` argument to the `qcc` and assign the data frame you read in above to that object.  Comment on any changes in the within day variation.
+
+```{r}
+
+qcc(data=df, type="R", newdata=df.new)
+
+```
+
+* From comparing the old df to the new df, there appear to be no obvious changes within day variation.
+
+7. Make a chart to assess the changes in the between (xbar) day variabitliy. Add the `newdata=` argument to the `qcc` and assign the data frame you read in above to that object.  Comment on any changes in the loading times after this change.
+
+```{r}
+
+qcc(data=df, type="xbar", newdata=df.new)
+
+```
+
+* From comparing the old df to the new df, there does appear to be a significant difference in loading times after the change. We can see that the new data has a much lower average mean than the old data.
+
+
+8.  Make a new set of R and Xbar charts using only the new data.  This will be the new baseline for the application loading times moving forward.  Provide the average loading time.
+
+```{R}
+
+qcc(df.new, type="R")
+qcc(df.new, type="xbar")
+
+
+mean(rowMeans(df.new))
+```
+
+* The average loading time should be 9.905062.

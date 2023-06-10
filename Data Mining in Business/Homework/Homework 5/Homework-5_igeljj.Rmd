@@ -1,0 +1,299 @@
+---
+title: "Homework 5 Jacob Igel"
+ 
+output: 
+  html_document:
+    
+    toc: true
+    toc_float: true
+  
+  
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+
+pacman::p_load(tidyverse, DataExplorer, ROCR, pROC, ggplot2, caret, fastDummies,lubridate)
+
+#source("/Users/jacobigel/Desktop/School/ISA 491/data summary.R")
+
+```
+
+## Part 1: Lending Club Modeling
+
+This part of the assignment will continue constructing models on the lending club data where the goal is to predict the loans that will be charged off within 12 months.
+
+1. Read in the files “training.RDS” and “valid.RDS”.  Verify the proportions of the Target variable in the training and validation sample.
+
+```{r, echo=FALSE}
+
+training <- readRDS("training.RDS")
+valid <- readRDS("valid.RDS")
+
+# removing the two accidental variables
+training <- select(training, -id)
+training <- select(training, -sub_grade)
+
+prop.table(table(training$Target))
+prop.table(table(valid$Target))
+
+```
+
+2. We have to provide an index for the `ctrl` object we must create for cross validation. Since we have read in a training data set separate from a validation data set we just need to create an index for the enter training set.  This is different than in class because we created an oversampled dataset.
+
+```{r}
+trainIndex<-seq(1:nrow(training))
+```
+
+3. Set up the createFolds and the trainControl functions for cross validation using k=10 folds. Set the seed to be 13. How many rows is each cross validation sample going to contain? Hint: look at the cvindx object.
+
+Each cross validation sample is going to contain 10 rows.
+
+```{r}
+library(caret)
+set.seed(13)
+cvindx<-createFolds(trainIndex, k=10, returnTrain = TRUE)
+ctrl <- trainControl(method="cv", index=cvindx, summaryFunction = twoClassSummary, classProbs = TRUE)
+
+```
+
+4. Why is it important to use cross validation instead of a single sample when constructing data driven models?
+
+Using cross validation helps in observing how our model does comparative to many different "samples". If we only use a single sample, we limit our ability to evaluate our model when trying to compare it to a more general sample/use it for any future predictions that may arise.
+
+5. How many cores does your computer have available for parallel computing?
+
+My computer has 8 cores available for parallel computing.
+
+```{R}
+library(doParallel)
+detectCores()
+
+```
+
+6. Set up a tunegrid for the `ranger` package to try k=number of variables randomly sampled at each split as 5, 10, 15 and 20. Set the minimum number of observations for a node to split to be either 10 or 20. Use gini as the splitting rule. Show the grid below.
+
+```{r}
+library(ranger)
+set.seed(13)
+
+tunegrid <- expand.grid(
+     .mtry = c(5, 10, 15, 20),
+     .splitrule = "gini",
+    .min.node.size = c(10, 20)
+  )
+
+tunegrid
+
+```
+7. Given your tune grid above and the fact we are doing 10 folds in cross validation, how many random forest models will we construct in total to find the best tuning parameters?
+
+500
+
+8. Construct a random forest model using the `tunegrid` and cross validation settings you created above. Use parallel processing. Use one less core than you have available on your machine. Show the output of the random forest. It will take a minute.
+
+```{r}
+cl <- makePSOCKcluster(7) #starts the cluster
+registerDoParallel(cl)
+
+
+rforest<-train(Target ~ ., data=training, method="ranger", tuneGrid=tunegrid, metric="ROC", num.trees=500, importance="impurity", trControl=ctrl)
+
+stopCluster(cl) # ends the cluster 
+
+
+rforest
+
+varImp(rforest)
+
+```
+
+9. Calculate the training and validation AUC for this model. Comment on the AUC values for this model. 
+
+While comparing the AUC values of this model, we can see that they are 0.2937 apart which is way too big of a difference to find this usable. The training data AUC is really good but when comparing it to the validation, we can tell it will not perform as well as we want it to.
+
+```{r}
+library(pROC)
+library(ROCR)
+p.rforest.t<-predict(rforest, data=training, type="prob")
+rt<-roc(training$Target,  p.rforest.t[,2])
+r.rforest.auc.t<-rt$auc
+r.rforest.auc.t
+
+
+```
+
+```{r}
+
+p.rforest<-predict(rforest, newdata = valid, type="prob")
+r<-roc(valid$Target,  p.rforest[,2])
+r.rforest.auc<-r$auc
+r.rforest.auc
+
+
+```
+
+10. Describe (in brief at a high level) the how a boosting algorithm works.
+
+Since we know that decision trees by themselves are not good models by themselves, we use boosting to find more ways to optimize our output while giving up slightly less reporting of the original data (since we are using modified data). 
+
+12. Construct the tunegrid for cross validation for a boosted tree model gbm. Use two values of the shrinkage parameter (0.1 and 0.01), two values of the number of sequential trees (50 and 100) and two values for the number of splits in the trees (10, 20). Set the minimum number of observations per node as 25. Show the tunegrid below.
+
+```{r}
+
+library(gbm)
+set.seed(13)
+
+Grid <- expand.grid( n.trees = seq(50, 100), interaction.depth = c(10, 20),
+                     shrinkage = c(0.1, 0.01), n.minobsinnode=c(25))
+Grid
+
+
+```
+
+13. Construct a boosted tree model using parallel processing and 10-fold cross validation. Show the output below. Remember to create a cluster with one less cores than you have available on your machine.
+
+```{r}
+cl <- makePSOCKcluster(7) #starts the cluster
+registerDoParallel(cl)
+
+gb.tree <- train(Target~., 
+                 data=training, 
+                 method = 'gbm', 
+                 trControl=ctrl, 
+                 tuneGrid=Grid, 
+                 metric='ROC')
+
+stopCluster(cl)
+
+varImp(gb.tree)
+```
+
+14. Calculate the training and validation AUC for this model. Comment on the AUC values for these models.
+
+
+With a AUC difference of 0.0389, I would say that this is a pretty good representation of the specific models due to how close they are. We could be closer but if I would say that this model would do a pretty good job of predicting other models.
+
+```{r}
+
+p.gbtree<-predict(gb.tree, data=training, type="prob")
+rt<-roc(training$Target,  p.gbtree[,2])
+r.gbtree.auc.t<-rt$auc
+r.gbtree.auc.t
+
+```
+
+
+```{r}
+p.gbtree<-predict(gb.tree, newdata=valid, type="prob")
+r<-roc(valid$Target,  p.gbtree[,2])
+r.gbtree.auc<-r$auc
+r.gbtree.auc
+
+```
+15.  Construct the tunegrid for cross validation for a boosted tree model using XgBoost. Use the grid from the notes. Show the tunegrid below.
+
+```{R}
+
+library(xgboost)
+Grid <-  expand.grid(nrounds = 100,
+                      max_depth = c(3,6),
+                    eta = c(0.001,0.1),
+                    gamma = c(0.5, 0.75),
+                    colsample_bytree = c(0.3, 1),
+                    min_child_weight = c(0,15),
+                      subsample = c(0.3,1)
+                            )
+
+
+```
+
+16. Construct a boosted tree model using parallel processing and 10-fold cross validation. Show the output below. Remember to create a cluster with one less cores than you have available on your machine.
+
+```{r}
+cl <- makePSOCKcluster(7) #starts the cluster
+registerDoParallel(cl)
+
+xgboost <- train(Target~., 
+                  data = training,
+                  method = "xgbTree",
+                  trControl=ctrl, 
+                 tuneGrid=Grid, 
+                 metric='ROC')
+
+stopCluster(cl)
+xgboost
+
+varImp(xgboost)
+
+```
+
+17. Calculate the training and validation AUC for this model. Comment on the AUC values for these models.
+
+There is an AUC difference of .016 makes this an extremely good model since we can tell that the training data is not super over fit and it will predict other samples well. 
+
+
+```{r}
+
+p.xgboost<-predict(xgboost, data=training, type="prob")
+rt<-roc(training$Target,  p.xgboost[,2])
+r.xgboost.auc.t<-rt$auc
+r.xgboost.auc.t
+
+
+```
+
+
+```{r}
+
+p.xgboost<-predict(xgboost, newdata=valid, type="prob")
+r<-roc(valid$Target,  p.xgboost[,2])
+r.xgboost.auc<-r$auc
+r.xgboost.auc
+
+
+```
+
+18.  Which model would choose moving forward?  Why?
+
+rforest AUC difference: 0.2937
+gb.tree AUC difference: 0.0389
+xgboost AUC difference: 0.016
+
+The xgboost would be the best moving forwards since it has the lowest difference in AUC values between the training and validation (it is not too overfit) which means that it will do a better job at predicting other samples.
+
+
+19. What is the most important variable for prediction?  
+
+Int_rate is the most important variable for prediction.
+
+varImp(rforest)
+int_rate	100.00000		
+
+varImp(gb.tree)
+int_rate	100.00000
+
+varImp(xgboost)
+int_rate	100.0000000	
+
+
+
+## Part 2: Logistic Regression
+
+1. Below is logistic regression output modeling the financial condition of banks.  The predictors are two ratios, TotLns&Lses/Assets is the ratio of total loans and leases to total assets and TotExp/Assets is the ratio of total expenses to total assets. The response is the financial condition of a bank, either weak or strong. Interpret the coefficient for TotLns.Lses.Assets in terms of the problem.
+
+The odds of belonging to class "1" will change by a factor of 1.87101e-35 (exp(-79.964)) when increasing TotLns.Lses.Assets by one unit, holding all other factors fixed.
+
+```{r}
+df<-read.csv("banks.csv", stringsAsFactors = TRUE)
+head(df)
+df$Financial.Condition<-relevel(df$Financial.Condition, ref="Weak")
+log.reg<-glm(Financial.Condition~TotLns.Lses.Assets+TotExp.Assets, data=df, family="binomial")
+summary(log.reg)
+
+exp(-79.964)
+```

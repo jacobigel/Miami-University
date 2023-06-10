@@ -1,0 +1,59 @@
+---
+title: "GapAnalysis"
+author: "Jacob Igel & Samuel Vaughan"
+date: "2023-04-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# GAP Analysis
+
+Interest lies in determining whether there is a difference in the average purchase total (i.e. the average dollar value of a customer’s purchase) between promotion versions. Knowing that the average purchase amount might vary between weekdays the GAP ran each condition on each weekday. The control was no offer.
+
+```{r}
+df<-read.csv("/Users/jacobigel/Desktop/School/ISA365-A/Datasets/gap.csv", stringsAsFactors = TRUE)
+
+head(df, 40)
+```
+
+```{r}
+library(dplyr)
+library(tidyverse)
+
+df_long <- df %>% pivot_longer(
+  c("A", "B","control"),
+  names_to = "Version", 
+  values_to = "Purchase"
+)
+
+df_long$Version <- as.factor(df_long$Version)
+df_long
+
+
+```
+```{r}
+mod<-aov(Purchase~Version+Day, data=df_long)
+summary(mod)
+```
+```{r}
+qqnorm(mod$residuals)
+qqline(mod$residuals)
+```
+```{r}
+df_long$residuals<-mod$residuals
+boxplot(df_long$residuals~df_long$Version)
+```
+```{r}
+TukeyHSD(mod)
+```
+
+
+```{r}
+boxplot(df_long$Purchase~df_long$Version, xlab = "Version", ylab = "Purchase Total Amount")
+```
+```{r}
+boxplot(df_long$Purchase~df_long$Day, xlab = "Day", ylab = "Purchase Total Amount")
+```

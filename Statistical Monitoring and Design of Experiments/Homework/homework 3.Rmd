@@ -1,0 +1,142 @@
+---
+title: "Homework 3 - Jacob Igel"
+date:  "Last complied on `r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+# Class Corrections
+
+1. You manage a website where 10% of the visitors get to the checkout page with items in the cart, but only half of these actually complete the purchase.  You want to test a new button that, you hope, will increase the percentage of actual purchases.  The new button is "A" and the current button is "B". To keep the math simple, you'd like to see a 10% lift (improvement) at the usual power (0.80) and significance (0.05) levels.  You want half the visitors who get to the checkout page assigned to group "A" and the other half assigned to group "B".  Here's the question: Do you assign visitors to "A" or "B" when they first get your website or when they actually get to the checkout page?
+
+If you assign treatment when visitors first get to the website, then the difference you want to detect is a change from 5.0% to 5.5%.  How many visitors need to come to the website so that this test can be conducted?
+
+```{r}
+power.prop.test(n=NULL, p1=0.05, p2=0.055, sig.level = 0.05, power = .8)
+
+```
+# Class Corrections
+ * n = 31234 * 2
+ __* n = 62468 total people__
+ 
+ OR 
+ 
+ __* n = 31234 people in each group__
+ 
+ 
+2. Follow on to 1: If you assign treatment when visitors finally get to the checkout page, then the difference you want to detect is a change from 50.0% to 55.0%.  How many visitors need to come to the website so that this test can be conducted?
+
+```{r}
+
+power.prop.test(n=NULL, p1=0.5, p2=0.55, sig.level = 0.05, power = .8)
+
+```
+# Class Corrections
+* n = 1565 * 2
+__* n = 3130__
+
+OR 
+
+__* n = 1565 people in each group__
+
+3. Which option would you prefer? Why?
+
+* I would prefer the second option since it not only detects a change 5% change from 50% to 55% (instead of 5.0% to 5.5%) but it also makes it so we can test on less people while still remaining statistically significant.
+
+# Class Corrections
+4. As part of a class assignment in an experimental design course, a student wants to test two different pots to determine which one boils water faster, steel bottom or copper bottom.  In order to do a sample size calculation, he needs an estimate of the standard deviation.  To do so, he took one of the pots and boiled water in it six times.  The times to a rolling boil were 133, 148, 137, 142, 145 and 150 seconds.  What sample size should he use to detect a difference of 15 seconds?  By the way, if you want to create a vector of times use this: `times<-c(133, 148, 137, 142, 145, 150)`
+
+```{r}
+times<-c(133, 148, 137, 142, 145, 150)
+sd <- sd(times)
+
+power.t.test(n=NULL, delta=15, sd=sd, sig.level=0.05, power = .8)
+
+```
+__* n = 5__
+
+5. Refer to 4: What sample size should he use to detect a difference of 5 seconds?  Use power=0.8 and $\alpha$=0.05.
+
+```{r}
+
+times<-c(133, 148, 137, 142, 145, 150)
+sd <- sd(times)
+
+power.t.test(n=NULL, delta=5, sd=sd(times), sig.level=0.05, power = .8)
+
+```
+__* n = 28__
+
+
+6. Refer to 4: What is the treatment this experiment?
+
+* Treatment: Different pots boiling water
+
+7. Refer to 4: What is the response in this experiment?
+
+* Response: Time it takes to boil
+
+8. Refer to 4: This describes the student's pilot experiment to help determine standard deviation.  Criticize this pilot experiment.  
+
+* I do not believe that this student used enough times to really make this statistically significant. By my calculations, if he wants a difference of 5 seconds, that means his sample size needs to be around 2 which, when having a sample size that small, makes the test insignificant. 
+
+# Class Corrections
+__By using one type of pot to get the standard deviation, you will not be running your test the same as you would be running the experiment__
+
+9. Design a boiling water experiment.  Describe the procedure for experimentation from start to finish. How much water will be used?  Where will you get the water?  How will "boiling" be determined?  How will the temperature be measured? How will the time be measured?  Should these all be done on the same burner? Back to Back?  On different days? why would this matter? You can use bullets or steps if this helps.
+
+* How much water will be used? Two cups per experiment  
+* Where will you get the water? Water from kitchen sink
+* How will "boiling" be determined? Using a thermometer, check when the water hits 212 F
+* How will the temperature be measured? Thermometer
+* How will the time be measured? A stop watch will start when the heat is turned on until the water reaches our boiling point of 212 F.    
+* Should these all be done on the same burner? Yes
+* Back to Back? No
+* On different days? Either different days or when the burner is cooled
+* Why would this matter? We do not want to put a fresh pot of unboiled water on a burner that is already heated up - this will effect the amount of time it takes for the pot to boil.
+
+
+10. For the boiling water experiment, assume you will replicate, repeat the treatment, 5 times (boil water in each pot 5 different times).  Design a randomized order for this experiment where your treatments are "steel" and "copper".
+
+```{r}
+steel<-rep("steel", 5)
+# steel
+copper<-rep("copper",5)
+# copper
+treatment<-c(steel, copper)
+treatment # without randomized order
+
+set.seed(115)
+index<-sample(1:length(treatment), size=10) 
+# index
+selected_order <- treatment[index]
+
+selected_order # randomized order
+
+
+order <- sample(treatment, 10)
+order
+
+```
+
+
+Here are some quick questions. Choose the best answer and state why for full credit.  You can delete the incorrect responses.
+
+11. Random assignment is crucial for: 
+(a) internal validity
+* If an experimenter is trying to test how different attributes change the dependent variable or to find some sort of causality, ensuring their random sample is also randomly assigned a different treatment falls under the internal validity of the experiment. Random assignment makes sure that everything done inside the experiment (internally) is done correctly for statistically significant results. 
+
+12. Random sampling is crucial for:
+(b) external validity
+* To ensure that an experiment can be generalized to a population, you need to make sure that you randomly sample from that population to ensure statistically significant results. In other words, external validity is crucial to ensure you get a good random sample. 
+
+13. The "treatment" in an experiment is: 
+(b) independent variable
+* A treatment is the variable that is being manipulated by the experimenter and it does not depend on another variable. 
+
+

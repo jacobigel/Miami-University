@@ -1,0 +1,52 @@
+<!--Jacob Igel, Section B, 11/13/19-->
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Printing Stars</title>
+	<link rel="stylesheet" type="text/css" href="styleme2.css">
+</head>
+<body id="body">
+<h1>Jacob Igel</h1>
+<div style="text-align: center;">
+	<button onclick="location.href= 'index.html';"><b>Home</b></button>
+	<button onclick="location.href= 'classes.html';"><b>Classes</b></button>
+	<button onclick="location.href= 'my_favorite.html';"><b>My Favorite</b></button>
+	<button onclick="location.href= 'my_mood.html';"><b>My Mood</b></button>
+	<button onclick="location.href= 'my_neighbors.html';"><b>My Neighbors</b></button>
+	<button onclick="location.href= 'programs.html';"><b>My Programs</b></button>
+</div>
+<hr>
+
+<h2>Print Stars Using For Loop</h2>
+<script type="text/javascript">
+	n_stars = parseFloat(prompt("Number of stars you would like to see?",""));
+
+
+	for (i=1; i<=n_stars; i=i+1)
+	{
+		for (j=1; j<=i; j=j+1)
+		{
+			document.write("*")
+		}
+
+		document.write("<br>")
+
+
+	}
+	
+</script>
+
+
+
+<hr>
+
+
+<div style="text-align: center;">
+	<button onclick="document.getElementById('body').style.backgroundColor ='Dodgerblue';"> <b>Change Background Color</b></button>
+</div>
+
+</body>
+</html>

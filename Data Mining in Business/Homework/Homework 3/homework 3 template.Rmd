@@ -1,0 +1,232 @@
+---
+title: "ISA 491A Homework 3 Jacob Igel"
+output:
+  html_document: default
+  word_document: default
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+```{r}
+pacman::p_load(DataExplorer, tidyverse, corrr)
+
+```
+
+
+
+### Part 1: PCA Practice
+
+1. Read in the "wine.csv" data set.  You should have 178 rows of 14 variables. Everything should be coded correctly without any adjustments.  You should have 1 factor and the rest numeric or integer.  We are going to perform a PCA on this data so first we need to subset the numeric variables.  Use the code below to make an index of "nums" that contains the column numbers of numeric or integer variables.
+
+```{r}
+df <- read.csv("wine.csv", stringsAsFactors = TRUE)
+
+nums <- unlist(lapply(df, is.numeric)) 
+nums
+
+```
+
+Then subset the data so it just includes those __columns__.  Show the `str()` output.
+
+```{r, echo}
+nums <- df[c(-1)]
+str(nums)
+
+```
+
+2. Summarize the data containing only the numeric variables that you created in number (1). Are there any missing observations?
+
+From what I can observe, there are no missing observations in the nums data set.
+
+```{r}
+source("/Users/jacobigel/Desktop/School/ISA 491/data summary.R")
+summary(nums)
+data.summary(nums)
+plot_missing(nums)
+```
+
+
+3. Construct a correlation color plot and paste it below.  Comment on any strong associations between variables.
+
+One strong postive association is between Flavanoids and Total_phenols.
+Another strong  positive association is between OD280_OD315 and both Flavanoids and Total_phenols.
+```{r}
+library(corrr)
+nums2 <- unlist(lapply(nums, is.numeric)) 
+M <- correlate(nums[,nums2])
+rplot(M, print_cor = FALSE, shape = 20, colors=c("purple", "orange"))+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+```
+
+4. Perform a PCA on all of the numeric variables in the wine data (hopefully the subset you created in number 1).  Paste the summary of the PCA below. Be sure to scale the data.
+
+```{r}
+
+pcs<-prcomp(data.frame(nums), scale = T)
+summary(pcs)
+
+```
+
+
+
+5. How many components are required to maintain at least 99\% of the total variation in the data?
+
+12 Principal Components
+
+6. Paste the weights for the first principle component below.
+
+
+```{r}
+
+(pcs$rotation[,1])
+
+
+```
+
+
+7. Paste the first 6 values of the first PC below.
+
+```{r}
+head((pcs$x[,1]))
+
+pcs$rotation
+```
+
+8. Scale the numeric wine data using `scale(data)`.  Paste the first 6 observations below.
+
+```{r}
+nums.scale <- scale(nums)
+head(nums.scale)
+mean(scale(nums$Alcohol))
+```
+
+
+9. What is the mean of the scaled Alcohol column?
+
+mean(scale(nums$Alcohol))
+-8.591766e-16
+
+
+10. Verify the value of PC1 for the second observation.  You can do this calculation in R and show it below.
+
+```{r}
+pcs$rotation
+head(pcs$x)
+head(data.frame(nums))
+
+-0.144329395 * (0.2455968-0) + 0.245187580 * (-0.49800856-0) + 0.002051061(-0.8256672-0) + 0.239320405(-2.4838405-0) + ...
+
+0.245187580 * (1.71 - mean(nums$Malic_Acid)) - 0.002051061 * (2.43 - mean(nums$Ash)) - 0.239320405 * (15.6	 - mean(nums$Ash_Alcalinity)) - 0.141992042 * (127 - mean(nums$Magnesium)) - 0.394660845 * (2.80	- mean(nums$Total_Phenols)) - 0.422934297 * (3.06  - mean(nums$Flavanoids)) - 0.298533103 * (0.28	 - mean(nums$Nonflavanoid_Phenols)) - 0.313429488 * (2.29 - mean(nums$Proanthocyanins)) - 0.088616705 * (5.64 - mean(nums$Color_Intensity)) - 0.296714564 * (1.04 - mean(nums$Hue)) - 0.376167411 * (3.92 - mean(nums$OD280_OD315))- 0.286752227 * (1065 - mean(nums$Proline))
+```
+
+### Part 2: Dimension Reduction and Imputation for Lending Club
+
+#### Imputation
+
+11. Read in the `lendingclub.RDS` file.  This data has been cleaned using the steps in Homework 2.
+
+```{r}
+lendclub <- readRDS("lendinglclub.RDS")
+
+```
+
+
+
+12. In homework 2 we created a few variables one of them was "emp_title_length".  Make a histogram of that variable.  Change the bin width to 50.  
+
+```{r}
+
+hist(lendclub$emp_title_length, binwidth = 50)
+
+```
+
+13. You should notice there are a lot of 0's.  That is a place where the employment title was left blank.  Replace those 0's with `NA`.  Show the summary of that variable below.  Should we do this with any 0 values in a variable? Why or why not?  Why did we do that here?
+
+Not every variable should be replaced with NA if there are a lot of zeros. Doing this with every variable would cause issues with variables that make sense to have 0 values in them. When doing it with employee title, no one can have a title of 0 characters hense why it makes
+sense to remove the zeros and replace them with NA values.
+
+```{r}
+
+lendclub$emp_title_length[lendclub$emp_title_length== 0]<-NA
+summary(lendclub$emp_title_length)
+
+```
+
+14. Impute the variables with missing values.  Use the median.  Only create indicators for those with more than 10% missing. Show your code and a summary to verify there are no missing values after imputation.
+
+The only three with missing rows are below 10%.
+
+```{R}
+plot_missing(lendclub)
+lendclub$emp_title_length[is.na(lendclub$emp_title_length)]<-median(lendclub$emp_title_length, na.rm=TRUE)
+summary(lendclub$emp_title_length)
+
+```
+
+
+#### Dimension Reduction
+
+15. Use proportions to collapse addr_state.  Keep the top 8 states by proportion. Show the code and the dim() of the data. We did not already create dummy varaibles so I would use `ifelse`. Make sure to remove the orginial varaible. 
+
+```{R}
+library(tidyverse)
+
+sort(summary(lendclub$addr_state), decreasing=TRUE)
+
+lendclub$addr_state<-ifelse(lendclub$addr_state=="CA", 1, 0)
+lendclub$addr_state<-ifelse(lendclub$addr_state=="NY", 1, 0)
+lendclub$addr_state<-ifelse(lendclub$addr_state=="TX", 1, 0)
+lendclub$addr_state<-ifelse(lendclub$addr_state=="FL", 1, 0)
+lendclub$addr_state<-ifelse(lendclub$addr_state=="IL", 1, 0)
+lendclub$addr_state<-ifelse(lendclub$addr_state=="NJ", 1, 0)
+lendclub$addr_state<-ifelse(lendclub$addr_state=="PA", 1, 0)
+lendclub$addr_state<-ifelse(lendclub$addr_state=="OH", 1, 0)
+
+dim(lendclub)
+```
+
+16.  Collapse sub_grade using proportion. Create dummy variables for all sub_grades with more than 1000 entries. Show the code below and the final `dim()`. We did not already create dummy variables so I would use `ifelse`. Make sure to remove the original variable. 
+
+```{r}
+
+sort(summary(lendclub$sub_grade), decreasing=TRUE)
+
+lendclub$sub_grade<-ifelse(lendclub$sub_grade=="C1", 1, 0)
+lendclub$sub_grade<-ifelse(lendclub$sub_grade=="B5", 1, 0)
+lendclub$sub_grade<-ifelse(lendclub$sub_grade=="C5", 1, 0)
+lendclub$sub_grade<-ifelse(lendclub$sub_grade=="C4", 1, 0)
+lendclub$sub_grade<-ifelse(lendclub$sub_grade=="B1", 1, 0)
+lendclub$sub_grade<-ifelse(lendclub$sub_grade=="C3", 1, 0)
+lendclub$sub_grade<-ifelse(lendclub$sub_grade=="C2", 1, 0)
+lendclub$sub_grade<-ifelse(lendclub$sub_grade=="B3", 1, 0)
+lendclub$sub_grade<-ifelse(lendclub$sub_grade=="B2", 1, 0)
+lendclub$sub_grade<-ifelse(lendclub$sub_grade=="B4", 1, 0)
+lendclub$sub_grade<-ifelse(lendclub$sub_grade=="A5", 1, 0)
+
+dim(lendclub)
+```
+
+
+
+
+17. How many degrees of freedom were "saved" by reducing sub_grade as you did in question 16?
+
+11
+
+18. Examine the correlation structure of the data.  Are there redundancies?  If so, state them and what should be done with those variables.  You don't actually have to do those things, just find out if there are redundancies. 
+
+It appears that at the lower right hand side and upper left there appear to be some redundancies in the data. With this, I would possibly create some principal components so that we can reduce some of the clutter while maintaining no loss of information. 
+
+```{r}
+library(corrr)
+lendclubnum <- unlist(lapply(lendclub, is.numeric)) 
+M<-correlate(lendclub[,lendclubnum])
+rplot(M, print_cor = FALSE, shape = 20, colors=c("purple", "orange"))+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+```

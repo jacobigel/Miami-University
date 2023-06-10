@@ -1,0 +1,17 @@
+message,city,product,sales
+I,one,A,42
+II,one,B,39
+III,one,C,30
+IV,one,D,32
+I,two,B,41
+II,two,C,34
+III,two,D,32
+IV,two,A,30
+I,three,C,45
+II,three,D,48
+III,three,A,36
+IV,three,B,33
+I,four,D,46
+II,four,A,40
+III,four,B,38
+IV,four,C,33
