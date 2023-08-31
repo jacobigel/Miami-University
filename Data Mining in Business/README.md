@@ -13,7 +13,7 @@ Analysis of large data sets related to business is the focus. Topics such as clu
 - Dimension Reduction
 - Evaluating Predictive Performance
 - Decision Trees
-- Logisitc Regression
+- Logistic Regression
 - Neural Networks
 - Random Forest
 - Data Partitioning (Training/Test)
