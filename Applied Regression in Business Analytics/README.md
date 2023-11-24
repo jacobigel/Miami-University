@@ -11,7 +11,7 @@ Multiple regression as related to analysis of business problems. Includes useful
 - Introduction to R
 - Regression Basics
 - Inference on Slope
-- Correlation & R-Sqaare Value
+- Correlation & R-Square Value
 - Confidence and Prediction Intervals
 - Multiple Linear Regression
 - Advanced Multiple Linear Regression
