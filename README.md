@@ -38,7 +38,6 @@ _This is not an extensive list of all classes due to certain sharing restriction
 - [Computer Science and Software Engineering (CSE 102)](https://github.com/jacobigel/Miami-University/tree/main/Computer%20Science%20and%20Software%20Engineering)
 - [Fundementals of Programming and Problem Solving (CSE 174)](https://github.com/jacobigel/Miami-University/tree/main/Fundementals%20of%20Programming%20and%20Problem%20Solving)
 - [Introduction to Software Engineering (CSE 201)](https://github.com/jacobigel/Miami-University/tree/main/Introduction%20to%20Software%20Engineering)
-- [Web Application Programming (CSE 252)](https://github.com/jacobigel/Miami-University/tree/main/Web%20Application%20Programming)
 - [Object Oriented Programming (CSE 271)](https://github.com/jacobigel/Miami-University/tree/main/Object%20Oriented%20Programming)
 - [Data Abstractions and Structures (CSE 274)](https://github.com/jacobigel/Miami-University/tree/main/Data%20Abstractions%20and%20Structures)
 
